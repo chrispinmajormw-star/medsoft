@@ -1,4 +1,4 @@
-import { store, displayName, isFacilityAdmin } from '../store.js';
+import { store, displayName, accountType, ACCOUNT_LABELS } from '../store.js';
 import { CONFIG } from '../config.js';
 import { ICON } from '../icons.js';
 import { esc } from '../utils.js';
@@ -54,20 +54,23 @@ function authView() {
 
 function accountView() {
   const name = displayName();
-  const admin = isFacilityAdmin();
+  const type = accountType();
   const mine = store.myFacilities[0];
+  const pillClass = { system_admin: 'sysadmin-pill', facility_admin: 'pending', user: 'open' }[type];
+  const roleRow = {
+    system_admin: `<button class="menu-row" data-action="go" data-screen="sysadmin">${ICON.shield}<span>System admin dashboard</span><small>Review listings</small></button>`,
+    facility_admin: `<button class="menu-row" data-action="go" data-screen="admin">${ICON.building}<span>My facility</span><small>${esc(mine ? mine.name : 'Not added yet')}</small></button>`,
+    user: `<button class="menu-row" data-action="become-admin">${ICON.building}<span>Register a facility</span><small>For pharmacies, clinics, hospitals</small></button>`,
+  }[type];
   return `
     <div class="card prof-card">
       <div class="avatar">${esc((name || 'M').charAt(0).toUpperCase())}</div>
       <h3>${esc(name || 'Your account')}</h3>
       <p>${esc(store.profile?.city || store.user.email)}</p>
-      <span class="pill ${admin ? 'pending' : 'open'}">${admin ? 'Facility account' : 'User account'}</span>
+      <span class="pill ${pillClass}">${ACCOUNT_LABELS[type]}</span>
     </div>
     <div class="card menu-list">
-      ${admin
-        ? `<button class="menu-row" data-action="go" data-screen="admin">${ICON.building}<span>My facility</span><small>${esc(mine ? mine.name : 'Not added yet')}</small></button>`
-        : `<button class="menu-row" data-action="become-admin">${ICON.building}<span>Register a facility</span><small>For pharmacies, clinics, hospitals</small></button>`}
-      ${store.isSystemAdmin ? `<button class="menu-row" data-action="go" data-screen="sysadmin">${ICON.shield}<span>System admin</span><small>Review listings</small></button>` : ''}
+      ${roleRow}
       <button class="menu-row" data-action="go" data-screen="saved">${ICON.saved}<span>Saved places</span><small>${store.saved.size}</small></button>
       ${settingsRow()}
       ${locationRow()}

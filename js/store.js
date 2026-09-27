@@ -33,6 +33,20 @@ export function displayName() {
   return store.profile?.full_name || store.user?.user_metadata?.full_name || store.user?.email?.split('@')[0] || '';
 }
 
+// Exactly one account type per account. System admin wins: it can never be a facility account.
+export function accountType() {
+  if (!store.user) return 'guest';
+  if (store.isSystemAdmin) return 'system_admin';
+  return store.profile?.role === 'facility_admin' ? 'facility_admin' : 'user';
+}
+
+export const ACCOUNT_LABELS = {
+  guest: 'Guest',
+  user: 'User account',
+  facility_admin: 'Facility account',
+  system_admin: 'System admin',
+};
+
 export function isFacilityAdmin() {
-  return Boolean(store.user && store.profile?.role === 'facility_admin');
+  return accountType() === 'facility_admin';
 }

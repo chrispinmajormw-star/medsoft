@@ -142,7 +142,8 @@ export function renderAdminEdit(param) {
   const title = document.getElementById('adminEditTitle');
   if (store.mode !== 'live' || !isFacilityAdmin()) {
     title.textContent = 'Facility';
-    body.innerHTML = emptyState('building', 'Only facility admin accounts can add listings.',
+    body.innerHTML = emptyState('building', store.isSystemAdmin
+      ? 'System admin accounts can\'t own or edit a facility.' : 'Only facility accounts can add listings.',
       '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facility</button>');
     return;
   }

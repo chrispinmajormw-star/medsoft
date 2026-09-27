@@ -1,6 +1,6 @@
 // Settings for everyone (appearance, default search radius) and, when signed in,
 // personal details, password and account type.
-import { store, isFacilityAdmin } from '../store.js';
+import { store, isFacilityAdmin, accountType } from '../store.js';
 import { CONFIG } from '../config.js';
 import * as api from '../api.js';
 import { esc, applyTheme, rememberRadius } from '../utils.js';
@@ -62,6 +62,15 @@ function passwordSection() {
 }
 
 function accountTypeSection() {
+  if (accountType() === 'system_admin') {
+    return `
+      <div class="card panel">
+        <h3>Account type</h3>
+        <p class="panel-text">System admin. You review, approve and suspend facility listings. Admin accounts can't own or manage a facility.</p>
+        <p class="panel-text">This account type is managed in Supabase and can't be changed here.</p>
+        <button class="btn btn-block btn-outline" data-action="go" data-screen="sysadmin">Open admin dashboard</button>
+      </div>`;
+  }
   if (isFacilityAdmin()) {
     const canSwitch = store.myFacilities.length === 0;
     return `
@@ -116,6 +125,7 @@ export const settingsActions = {
   },
   'become-admin': async () => {
     if (!store.user) { go('profile'); return; }
+    if (accountType() === 'system_admin') { toast('System admin accounts can\'t manage a facility. Use a separate account.', 4000); return; }
     if (!confirm('Register as a facility account? You will be able to list the one pharmacy, clinic or hospital you run.')) return;
     if (await setRole('facility_admin')) { toast('You can now add your facility.'); go('admin-edit', 'new'); }
   },

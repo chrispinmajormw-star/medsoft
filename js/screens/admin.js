@@ -1,5 +1,5 @@
 // "My facility": the dashboard for facility admin accounts (one facility per account).
-import { store, isFacilityAdmin } from '../store.js';
+import { store, isFacilityAdmin, accountType } from '../store.js';
 import { ICON } from '../icons.js';
 import { CONFIG } from '../config.js';
 import { esc, typeLabel, timeAgo, KINDS, itemsOf } from '../utils.js';
@@ -62,6 +62,11 @@ export function renderAdmin() {
   if (!store.user) {
     body.innerHTML = emptyState('building', 'Sign in with a facility admin account to manage your listing.',
       '<button class="btn btn-sm" data-action="go" data-screen="profile">Sign in</button>');
+    return;
+  }
+  if (accountType() === 'system_admin') {
+    body.innerHTML = emptyState('shield', 'System admin accounts review facilities but can\'t own one.<br>Use a separate account for a facility you run.',
+      '<button class="btn btn-sm" data-action="go" data-screen="sysadmin">Open admin dashboard</button>');
     return;
   }
   if (!isFacilityAdmin()) {

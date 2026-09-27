@@ -1,5 +1,5 @@
 // Loads data into the store. Shared by app.js and the admin screens.
-import { store } from './store.js';
+import { store, isFacilityAdmin } from './store.js';
 import * as api from './api.js';
 import { withDistances } from './utils.js';
 
@@ -26,7 +26,7 @@ export async function loadFacilities({ quiet = false, onStart } = {}) {
 }
 
 export async function loadMyFacilities() {
-  if (store.profile?.role !== 'facility_admin' || !store.user) { rawMine = []; applyPosition(); return; }
+  if (!isFacilityAdmin()) { rawMine = []; applyPosition(); return; }
   try {
     rawMine = await api.fetchMyFacilities(store.user);
   } catch (err) {
