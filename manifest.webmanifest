@@ -1,0 +1,11 @@
+{
+  "name": "Medsoft",
+  "short_name": "Medsoft",
+  "description": "Find open pharmacies and hospitals near you.",
+  "start_url": "./#/home",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F7FAF9",
+  "theme_color": "#149A85",
+  "icons": [{ "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

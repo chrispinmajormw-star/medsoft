@@ -1,0 +1,41 @@
+/* Design tokens, reset and the phone frame */
+:root{
+  --bg:#EFF4F2; --frame:#F7FAF9; --panel:#FFFFFF; --ink:#173A34; --ink-soft:#5E756E; --ink-faint:#95A8A2;
+  --line:#E4ECE9; --primary:#149A85; --primary-deep:#0D6F5F; --primary-tint:#E3F4F0;
+  --amber:#E3A73B; --amber-tint:#FCF1DD; --amber-ink:#8A6512; --coral:#D5695A; --coral-tint:#FBE9E6;
+  --pharmacy:#149A85; --hospital:#D5695A; --shadow:0 12px 28px -14px rgba(13,111,95,.28);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1A17; --frame:#0F1F1B; --panel:#152622; --ink:#EAF2EF; --ink-soft:#93A9A2; --ink-faint:#5E756E;
+    --line:#20342E; --primary-tint:#173A32; --amber-tint:#2A2412; --amber-ink:#E3C27A; --coral-tint:#2E1E1A; --shadow:0 12px 28px -14px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1A17; --frame:#0F1F1B; --panel:#152622; --ink:#EAF2EF; --ink-soft:#93A9A2; --ink-faint:#5E756E;
+  --line:#20342E; --primary-tint:#173A32; --amber-tint:#2A2412; --amber-ink:#E3C27A; --coral-tint:#2E1E1A; --shadow:0 12px 28px -14px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);display:flex;justify-content:center}
+h1,h2,h3,h4{font-family:'Space Grotesk','Inter',system-ui,sans-serif;margin:0}
+button,input{font-family:inherit;font-size:inherit}
+svg{display:block}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.hidden{display:none!important}
+[data-icon]{display:inline-flex;align-items:center;justify-content:center}
+
+#phone{width:100%;max-width:430px;min-height:100vh;background:var(--frame);position:relative;overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:760px){
+  body{padding:32px 16px}
+  #phone{min-height:844px;height:844px;border-radius:36px;box-shadow:0 30px 60px -20px rgba(13,58,52,.35);border:8px solid #0E1210}
+}
+@media (max-width:759px){ #phone{height:100%;min-height:0} }
+
+.screen{display:none;flex-direction:column;flex:1;min-height:0;padding-top:env(safe-area-inset-top,0px)}
+.screen.active{display:flex}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
