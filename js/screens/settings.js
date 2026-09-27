@@ -67,10 +67,10 @@ function accountTypeSection() {
     return `
       <div class="card panel">
         <h3>Account type</h3>
-        <p class="panel-text">Facility admin. You can list pharmacies, clinics and hospitals and update their stock.</p>
+        <p class="panel-text">Facility account. You manage one pharmacy, clinic or hospital and keep its stock up to date.</p>
         ${canSwitch
           ? '<button class="btn btn-block btn-outline" data-action="become-user">Switch to a user account</button>'
-          : '<p class="panel-text">To switch to a user account, delete your facility listings first.</p>'}
+          : '<p class="panel-text">To switch to a user account, delete your facility listing first.</p>'}
       </div>`;
   }
   return `
@@ -116,7 +116,7 @@ export const settingsActions = {
   },
   'become-admin': async () => {
     if (!store.user) { go('profile'); return; }
-    if (!confirm('Register as a facility admin? You will be able to list pharmacies, clinics or hospitals you run.')) return;
+    if (!confirm('Register as a facility account? You will be able to list the one pharmacy, clinic or hospital you run.')) return;
     if (await setRole('facility_admin')) { toast('You can now add your facility.'); go('admin-edit', 'new'); }
   },
   'become-user': async () => {

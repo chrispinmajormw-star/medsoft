@@ -41,7 +41,7 @@ export function renderAdminStock(param) {
   const f = myFacilityById(param);
   if (store.mode !== 'live' || !isFacilityAdmin() || !f) {
     body.innerHTML = emptyState('box', 'This facility is not one of yours, or it was deleted.',
-      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facilities</button>');
+      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facility</button>');
     return;
   }
   facilityId = f.id;

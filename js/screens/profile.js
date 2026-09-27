@@ -55,17 +55,17 @@ function authView() {
 function accountView() {
   const name = displayName();
   const admin = isFacilityAdmin();
-  const count = store.myFacilities.length;
+  const mine = store.myFacilities[0];
   return `
     <div class="card prof-card">
       <div class="avatar">${esc((name || 'M').charAt(0).toUpperCase())}</div>
       <h3>${esc(name || 'Your account')}</h3>
       <p>${esc(store.profile?.city || store.user.email)}</p>
-      <span class="pill ${admin ? 'pending' : 'open'}">${admin ? 'Facility admin' : 'User account'}</span>
+      <span class="pill ${admin ? 'pending' : 'open'}">${admin ? 'Facility account' : 'User account'}</span>
     </div>
     <div class="card menu-list">
       ${admin
-        ? `<button class="menu-row" data-action="go" data-screen="admin">${ICON.building}<span>My facilities</span><small>${count}</small></button>`
+        ? `<button class="menu-row" data-action="go" data-screen="admin">${ICON.building}<span>My facility</span><small>${esc(mine ? mine.name : 'Not added yet')}</small></button>`
         : `<button class="menu-row" data-action="become-admin">${ICON.building}<span>Register a facility</span><small>For pharmacies, clinics, hospitals</small></button>`}
       <button class="menu-row" data-action="go" data-screen="saved">${ICON.saved}<span>Saved places</span><small>${store.saved.size}</small></button>
       ${settingsRow()}

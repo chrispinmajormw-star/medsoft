@@ -1,4 +1,4 @@
-// "My facilities": the dashboard for facility admin accounts.
+// "My facility": the dashboard for facility admin accounts (one facility per account).
 import { store, isFacilityAdmin } from '../store.js';
 import { ICON } from '../icons.js';
 import { CONFIG } from '../config.js';
@@ -44,12 +44,13 @@ function facilityCard(f) {
 
 export function renderAdmin() {
   const body = document.getElementById('adminBody');
+  document.querySelector('#scr-admin .screen-title').textContent = 'My facility';
   if (store.mode === 'demo') {
     body.innerHTML = emptyState('building', 'Facility accounts need Supabase.<br>Add your keys to js/config.js.');
     return;
   }
   if (!store.user) {
-    body.innerHTML = emptyState('building', 'Sign in with a facility admin account to manage your listings.',
+    body.innerHTML = emptyState('building', 'Sign in with a facility admin account to manage your listing.',
       '<button class="btn btn-sm" data-action="go" data-screen="profile">Sign in</button>');
     return;
   }
@@ -58,11 +59,13 @@ export function renderAdmin() {
       '<button class="btn btn-sm" data-action="become-admin">Register a facility</button>');
     return;
   }
-  const list = store.myFacilities;
-  body.innerHTML = `
-    <p class="admin-intro">New listings appear on the map once ${esc(CONFIG.APP_NAME)} verifies them. Stock updates show straight away.</p>
+  const mine = store.myFacilities[0];
+  body.innerHTML = mine ? `
+    <p class="admin-intro">Stock updates show on the map straight away. Changing your facility's name or type sends it back for verification.</p>
+    <div class="list-wrap">${facilityCard(mine)}</div>` : `
+    <p class="admin-intro">Each account manages one pharmacy, clinic or hospital. Your listing appears on the map once ${esc(CONFIG.APP_NAME)} verifies it.</p>
     <div class="list-wrap">
-      ${list.length ? list.map(facilityCard).join('') : emptyState('building', 'You have not added a facility yet.')}
-      <button class="btn btn-block" data-action="go-param" data-screen="admin-edit" data-id="new">${ICON.plus} Add a facility</button>
+      ${emptyState('building', 'You have not added your facility yet.')}
+      <button class="btn btn-block" data-action="go-param" data-screen="admin-edit" data-id="new">${ICON.plus} Add your facility</button>
     </div>`;
 }

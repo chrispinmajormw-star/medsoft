@@ -116,18 +116,25 @@ export function renderAdminEdit(param) {
   if (store.mode !== 'live' || !isFacilityAdmin()) {
     title.textContent = 'Facility';
     body.innerHTML = emptyState('building', 'Only facility admin accounts can add listings.',
-      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facilities</button>');
+      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facility</button>');
+    return;
+  }
+  if (param === 'new' && store.myFacilities.length) {
+    const existing = store.myFacilities[0];
+    title.textContent = 'Facility';
+    body.innerHTML = emptyState('building', `Your account already manages <b>${esc(existing.name)}</b>.<br>Each account can list one facility.`,
+      `<button class="btn btn-sm" data-action="go-param" data-screen="admin-edit" data-id="${existing.id}">Edit ${esc(existing.name)}</button>`);
     return;
   }
   const f = param === 'new' ? null : myFacilityById(param);
   if (param !== 'new' && !f) {
     title.textContent = 'Facility';
     body.innerHTML = emptyState('info', 'This facility is not one of yours, or it was deleted.',
-      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facilities</button>');
+      '<button class="btn btn-sm" data-action="go" data-screen="admin">Go to My facility</button>');
     return;
   }
   editingId = f ? f.id : null;
-  title.textContent = f ? 'Edit facility' : 'Add a facility';
+  title.textContent = f ? 'Edit facility' : 'Add your facility';
   body.innerHTML = form(f);
   const lat = f ? f.lat : store.position.lat;
   const lng = f ? f.lng : store.position.lng;
@@ -189,7 +196,9 @@ export const adminEditSubmits = {
         go('admin-stock', created.id);
       }
     } catch (err) {
-      errorEl.textContent = err.message || 'The facility could not be saved.';
+      errorEl.textContent = err.code === '23505'
+        ? 'This account already has a facility. Each account can list one. Go back to My facility to edit it.'
+        : err.message || 'The facility could not be saved.';
     } finally {
       button.disabled = false;
     }
