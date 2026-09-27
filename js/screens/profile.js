@@ -67,6 +67,7 @@ function accountView() {
       ${admin
         ? `<button class="menu-row" data-action="go" data-screen="admin">${ICON.building}<span>My facility</span><small>${esc(mine ? mine.name : 'Not added yet')}</small></button>`
         : `<button class="menu-row" data-action="become-admin">${ICON.building}<span>Register a facility</span><small>For pharmacies, clinics, hospitals</small></button>`}
+      ${store.isSystemAdmin ? `<button class="menu-row" data-action="go" data-screen="sysadmin">${ICON.shield}<span>System admin</span><small>Review listings</small></button>` : ''}
       <button class="menu-row" data-action="go" data-screen="saved">${ICON.saved}<span>Saved places</span><small>${store.saved.size}</small></button>
       ${settingsRow()}
       ${locationRow()}

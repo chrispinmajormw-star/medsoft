@@ -11,6 +11,7 @@ export const store = {
   saved: new Set(),
   user: null,
   profile: null,
+  isSystemAdmin: false, // from public.system_admins; only settable in the Supabase SQL editor
   theme: savedTheme(),
   position: { lat: CONFIG.DEFAULT_LOCATION.lat, lng: CONFIG.DEFAULT_LOCATION.lng },
   positionSource: 'default', // 'default' | 'device'

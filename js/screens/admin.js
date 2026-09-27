@@ -7,6 +7,7 @@ import { badge, emptyState } from '../components/cards.js';
 
 function statusPill(f) {
   if (!f.isActive) return '<span class="pill closed">Hidden</span>';
+  if (!f.verified && f.reviewNote) return '<span class="pill closed">Needs changes</span>';
   if (!f.verified) return '<span class="pill pending">Awaiting verification</span>';
   return '<span class="pill open">Live on map</span>';
 }
@@ -41,6 +42,7 @@ function facilityCard(f) {
         </div>
         ${statusPill(f)}
       </div>
+      ${f.reviewNote ? `<p class="review-note"><b>${f.verified ? 'Note' : 'Not approved yet'}:</b> ${esc(f.reviewNote)}<br><small>Fix this in Edit details. Your listing will be reviewed again.</small></p>` : ''}
       <p class="admin-meta">${stockSummary(f)}${updated ? `. Updated ${timeAgo(updated)}` : ''}</p>
       <div class="admin-actions">
         <button class="btn btn-sm" data-action="go-param" data-screen="admin-stock" data-id="${f.id}">${ICON.box} Stock & services</button>

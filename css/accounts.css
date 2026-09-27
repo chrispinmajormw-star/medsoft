@@ -90,3 +90,19 @@
 /* equipment for sale */
 .tag.equipment{background:var(--panel);border-color:var(--ink-faint);color:var(--ink)}
 .tag.equipment.low{background:var(--amber-tint);border-color:var(--amber);color:var(--amber-ink)}
+
+/* system admin */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 18px 10px}
+.stat-tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--ink)}
+.stat-tile b{font:700 22px 'Space Grotesk',system-ui,sans-serif}
+.stat-tile span{font-size:11.5px;font-weight:600;color:var(--ink-soft)}
+.stat-tile.active{border-color:var(--primary);background:var(--primary-tint)}
+.review-facts{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.review-facts > div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.review-facts > div > span:first-child{color:var(--ink-soft);flex:none}
+.review-facts > div > span:last-child{font-weight:600;text-align:right;min-width:0;overflow-wrap:anywhere}
+.review-facts small{font-weight:500;color:var(--ink-soft)}
+.review-facts a{color:var(--primary)}
+.review-note{margin:0;font-size:12.5px;background:var(--coral-tint);color:var(--coral);border-radius:10px;padding:9px 11px;line-height:1.4}
+.review-note small{color:var(--ink-soft)}
+.pill.hidden-pill{background:var(--line);color:var(--ink-soft)}

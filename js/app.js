@@ -17,6 +17,7 @@ import { renderSettings, settingsActions, settingsChanges, settingsSubmits } fro
 import { renderAdmin } from './screens/admin.js';
 import { renderAdminEdit, adminEditActions, adminEditChanges, adminEditSubmits } from './screens/admin-edit.js';
 import { renderAdminStock, adminStockActions, adminStockSubmits } from './screens/admin-stock.js';
+import { renderSysadmin, sysadminActions } from './screens/sysadmin.js';
 import { refreshMapSize } from './screens/map.js';
 
 registerScreen('home', renderHome);
@@ -28,6 +29,7 @@ registerScreen('settings', renderSettings);
 registerScreen('admin', renderAdmin);
 registerScreen('admin-edit', renderAdminEdit);
 registerScreen('admin-stock', renderAdminStock);
+registerScreen('sysadmin', renderSysadmin);
 
 const isFormScreen = () => FORM_SCREENS.has(currentRoute().screen);
 
@@ -57,9 +59,11 @@ async function setUser(user, { reloadFacilities = true } = {}) {
   if (store.user?.id === previousId) return false;
 
   store.profile = null;
+  store.isSystemAdmin = false;
   if (store.user) {
     try { store.profile = await api.fetchProfile(store.user.id); }
     catch (err) { console.error('Failed to load profile', err); }
+    store.isSystemAdmin = await api.fetchIsSystemAdmin(store.user);
     applyProfilePreferences();
     await api.mergeLocalSavedInto(store.user, allFacilityIds());
   }
@@ -68,7 +72,7 @@ async function setUser(user, { reloadFacilities = true } = {}) {
     loadMyFacilities(),
     reloadFacilities ? loadFacilities({ quiet: true }) : null,
   ]);
-  renderNavbars(isFacilityAdmin());
+  renderNavbars(isFacilityAdmin(), store.isSystemAdmin);
   return true;
 }
 
@@ -179,6 +183,7 @@ const ACTIONS = {
   ...settingsActions,
   ...adminEditActions,
   ...adminStockActions,
+  ...sysadminActions,
 };
 
 const SUBMITS = {
@@ -221,7 +226,7 @@ function bindEvents() {
   // Fired by settings when the account type changes.
   window.addEventListener('medsoft:profile-changed', async () => {
     await loadMyFacilities();
-    renderNavbars(isFacilityAdmin());
+    renderNavbars(isFacilityAdmin(), store.isSystemAdmin);
     render();
   });
 

@@ -57,6 +57,8 @@ function normalizeFacility(row) {
     ownerId: row.owner_id || null,
     updatedAt: row.updated_at || null,
     stockUpdatedAt: row.stock_updated_at || null,
+    reviewNote: row.review_note || '',
+    reviewedAt: row.reviewed_at || null,
   };
 }
 
@@ -79,10 +81,48 @@ export async function fetchFacilities() {
 export async function fetchMyFacilities(user) {
   const sb = await getClient();
   if (!sb || !user) return [];
-  const { data, error } = await sb.from('facilities').select(FACILITY_COLUMNS)
-    .eq('owner_id', user.id).order('created_at', { ascending: true });
+  const query = cols => sb.from('facilities').select(cols).eq('owner_id', user.id).order('created_at', { ascending: true });
+  // review_note arrives with 006_system_admin.sql; keep working if that hasn't been run yet.
+  let { data, error } = await query(`${FACILITY_COLUMNS},review_note,reviewed_at`);
+  if (error && /review_note|reviewed_at|42703/.test(`${error.code} ${error.message}`)) ({ data, error } = await query(FACILITY_COLUMNS));
   if (error) throw error;
   return data.map(normalizeFacility);
+}
+
+// ---------- system admin ----------
+export async function fetchIsSystemAdmin(user) {
+  const sb = await getClient();
+  if (!sb || !user) return false;
+  const { data, error } = await sb.from('system_admins').select('user_id').eq('user_id', user.id).maybeSingle();
+  if (error) return false; // table missing (006 not run) or no access: not an admin
+  return Boolean(data);
+}
+
+export async function adminListFacilities() {
+  const sb = await getClient();
+  const { data, error } = await sb.rpc('admin_list_facilities');
+  if (error) throw error;
+  return data.map(row => ({
+    ...normalizeFacility(row),
+    createdAt: row.created_at,
+    ownerEmail: row.owner_email || '',
+    ownerName: row.owner_name || '',
+    counts: { medicine: row.medicines || 0, service: row.services || 0, equipment: row.equipment || 0 },
+  }));
+}
+
+export async function adminStats() {
+  const sb = await getClient();
+  const { data, error } = await sb.rpc('admin_stats');
+  if (error) throw error;
+  return data;
+}
+
+// approve = true to make it live; false to reject/suspend with a reason.
+export async function adminReview(facilityId, approve, note = null) {
+  const sb = await getClient();
+  const { error } = await sb.rpc('admin_review_facility', { p_id: facilityId, p_approve: approve, p_note: note });
+  if (error) throw error;
 }
 
 export async function createFacility(fields) {
