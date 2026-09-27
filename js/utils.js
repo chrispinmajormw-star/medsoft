@@ -1,5 +1,19 @@
 import { CONFIG } from './config.js';
 
+export const FACILITY_TYPES = [
+  { id: 'pharmacy', label: 'Pharmacy', plural: 'Pharmacies', letter: 'Rx', color: '#149A85' },
+  { id: 'clinic', label: 'Clinic', plural: 'Clinics', letter: 'C', color: '#C38A2E' },
+  { id: 'hospital', label: 'Hospital', plural: 'Hospitals', letter: 'H', color: '#D5695A' },
+];
+export const typeInfo = t => FACILITY_TYPES.find(x => x.id === t) || FACILITY_TYPES[0];
+export const typeLabel = t => typeInfo(t).label;
+
+export const STOCK_STATUS = {
+  in_stock: 'In stock',
+  low: 'Running low',
+  out: 'Out of stock',
+};
+
 export function haversineKm(a, b) {
   const R = 6371, tr = d => d * Math.PI / 180;
   const dLat = tr(b.lat - a.lat), dLng = tr(b.lng - a.lng);
@@ -11,7 +25,7 @@ export function withDistances(facilities, position) {
   return facilities.map(f => ({ ...f, dist: haversineKm(position, f) }));
 }
 
-// Escape text before putting it into innerHTML — data now comes from a database.
+// Escape text before putting it into innerHTML — data comes from a database.
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -42,8 +56,19 @@ export function hoursLabel(f) {
   return `${trimTime(f.openTime)}–${trimTime(f.closeTime)}`;
 }
 
-export const typeLabel = t => (t === 'pharmacy' ? 'Pharmacy' : 'Hospital');
 export const km = d => `${d.toFixed(1)} km`;
+
+export function timeAgo(iso) {
+  if (!iso) return '';
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 export function getDevicePosition(timeout = 8000) {
   return new Promise((resolve, reject) => {
@@ -61,3 +86,24 @@ export function directionsUrl(from, to) {
 }
 
 export const telUrl = phone => `tel:${phone.replace(/[^\d+]/g, '')}`;
+
+// ---------- theme ----------
+const THEME_KEY = 'medsoft:theme';
+export function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
+  else delete root.dataset.theme;
+  try { localStorage.setItem(THEME_KEY, theme || 'system'); } catch { /* ignore */ }
+}
+export function savedTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'system'; } catch { return 'system'; }
+}
+
+// ---------- device preferences (used for guests, and as a cache) ----------
+const RADIUS_KEY = 'medsoft:radius';
+export function savedRadius() {
+  try { const n = Number(localStorage.getItem(RADIUS_KEY)); return n > 0 ? n : null; } catch { return null; }
+}
+export function rememberRadius(km) {
+  try { localStorage.setItem(RADIUS_KEY, String(km)); } catch { /* ignore */ }
+}

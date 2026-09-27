@@ -1,9 +1,17 @@
 // HTML builders for facility cards and empty states.
 import { ICON } from '../icons.js';
 import { store } from '../store.js';
-import { esc, isOpenNow, hoursLabel, typeLabel, km, directionsUrl } from '../utils.js';
+import { esc, isOpenNow, hoursLabel, typeLabel, typeInfo, km, directionsUrl, STOCK_STATUS } from '../utils.js';
 
-const badge = f => `<div class="rc-ic ${f.type}"><b>${f.type === 'pharmacy' ? 'Rx' : 'H'}</b></div>`;
+export const badge = f => `<div class="rc-ic ${f.type}"><b>${typeInfo(f.type).letter}</b></div>`;
+
+export function stockTag(s, query = '') {
+  const q = query.trim().toLowerCase();
+  const match = q && s.item.toLowerCase().includes(q) && s.status !== 'out';
+  const cls = [s.status !== 'in_stock' ? s.status : '', match ? 'match' : ''].filter(Boolean).join(' ');
+  const title = STOCK_STATUS[s.status] || '';
+  return `<span class="tag ${cls}" title="${title}">${esc(s.item)}${s.status === 'low' ? ' · low' : ''}</span>`;
+}
 
 export function miniCard(f) {
   return `
@@ -18,10 +26,9 @@ export function miniCard(f) {
 }
 
 export function resultCard(f, query = '') {
-  const q = query.trim().toLowerCase();
   const open = isOpenNow(f);
-  const stock = f.stock.map(s =>
-    `<span class="tag${q && s.toLowerCase().includes(q) ? ' match' : ''}">${esc(s)}</span>`).join('');
+  const stock = f.stock.map(s => stockTag(s, query)).join('');
+  const pending = !f.verified ? '<span class="pill pending">Awaiting verification</span>' : '';
   return `
     <div class="card result-card" role="button" tabindex="0" data-action="open-detail" data-id="${f.id}">
       <div class="rc-top">
@@ -31,8 +38,9 @@ export function resultCard(f, query = '') {
           <p>${typeLabel(f.type)}, ${km(f.dist)} away</p>
           ${f.reviews ? `<div class="rc-rating">${ICON.star}<b>${f.rating.toFixed(1)}</b> (${f.reviews})</div>` : ''}
         </div>
-        <span class="pill ${open ? 'open' : 'closed'}">${open ? 'Open' : 'Closed'}</span>
+        ${pending || `<span class="pill ${open ? 'open' : 'closed'}">${open ? 'Open' : 'Closed'}</span>`}
       </div>
+      ${f.notice ? `<p class="card-notice">${esc(f.notice)}</p>` : ''}
       ${stock ? `<div class="stock">${stock}</div>` : ''}
       <div class="rc-foot">
         <small>${hoursLabel(f)}</small>

@@ -5,14 +5,34 @@ import { getClient } from './supabase-client.js';
 import { SEED_FACILITIES } from './seed-data.js';
 
 const LOCAL_SAVED_KEY = 'medsoft:saved';
-const FACILITY_COLUMNS =
-  'id,name,type,lat,lng,is_24h,open_time,close_time,phone,address,rating,reviews_count,stock,verified,updated_at';
+const FACILITY_COLUMNS = [
+  'id', 'name', 'type', 'lat', 'lng', 'is_24h', 'open_time', 'close_time', 'phone', 'address', 'city',
+  'rating', 'reviews_count', 'verified', 'is_active', 'notice', 'owner_id', 'updated_at', 'stock_updated_at',
+  'facility_stock(id,item,status,updated_at)',
+].join(',');
+const PROFILE_COLUMNS = 'id,full_name,city,phone,default_radius_km,theme,role';
+
+// Columns a facility admin is allowed to write (matches the grants in 002_accounts_and_admin.sql).
+const EDITABLE_FACILITY_FIELDS = [
+  'name', 'type', 'lat', 'lng', 'is_24h', 'open_time', 'close_time', 'phone', 'address', 'city', 'notice', 'is_active',
+];
+
+const STATUS_ORDER = { in_stock: 0, low: 1, out: 2 };
+
+function normalizeStock(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map(s => (typeof s === 'string'
+      ? { id: null, item: s, status: 'in_stock', updatedAt: null }
+      : { id: Number(s.id), item: s.item, status: s.status || 'in_stock', updatedAt: s.updated_at || null }))
+    .sort((a, b) => (STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) || a.item.localeCompare(b.item));
+}
 
 function normalizeFacility(row) {
   return {
     id: Number(row.id),
     name: row.name,
-    type: row.type === 'hospital' ? 'hospital' : 'pharmacy',
+    type: ['pharmacy', 'clinic', 'hospital'].includes(row.type) ? row.type : 'pharmacy',
     lat: Number(row.lat),
     lng: Number(row.lng),
     is24h: Boolean(row.is_24h),
@@ -20,21 +40,92 @@ function normalizeFacility(row) {
     closeTime: row.close_time ? String(row.close_time).slice(0, 5) : null,
     phone: row.phone || '',
     address: row.address || '',
+    city: row.city || '',
     rating: Number(row.rating || 0),
     reviews: Number(row.reviews_count || 0),
-    stock: Array.isArray(row.stock) ? row.stock : [],
+    stock: normalizeStock(row.facility_stock ?? row.stock),
     verified: row.verified !== false,
+    isActive: row.is_active !== false,
+    notice: row.notice || '',
+    ownerId: row.owner_id || null,
     updatedAt: row.updated_at || null,
+    stockUpdatedAt: row.stock_updated_at || null,
   };
 }
 
-// ---------- facilities ----------
+function pickEditable(fields) {
+  const out = {};
+  EDITABLE_FACILITY_FIELDS.forEach(k => { if (k in fields) out[k] = fields[k]; });
+  return out;
+}
+
+// ---------- facilities (public) ----------
 export async function fetchFacilities() {
   const sb = await getClient();
   if (!sb) return SEED_FACILITIES.map(normalizeFacility);
   const { data, error } = await sb.from('facilities').select(FACILITY_COLUMNS).eq('is_active', true);
   if (error) throw error;
   return data.map(normalizeFacility);
+}
+
+// ---------- facilities (admin) ----------
+export async function fetchMyFacilities(user) {
+  const sb = await getClient();
+  if (!sb || !user) return [];
+  const { data, error } = await sb.from('facilities').select(FACILITY_COLUMNS)
+    .eq('owner_id', user.id).order('created_at', { ascending: true });
+  if (error) throw error;
+  return data.map(normalizeFacility);
+}
+
+export async function createFacility(fields) {
+  const sb = await getClient();
+  const { data, error } = await sb.from('facilities').insert(pickEditable(fields)).select(FACILITY_COLUMNS).single();
+  if (error) throw error;
+  return normalizeFacility(data);
+}
+
+export async function updateFacility(id, fields) {
+  const sb = await getClient();
+  const { data, error } = await sb.from('facilities').update(pickEditable(fields)).eq('id', id).select(FACILITY_COLUMNS).single();
+  if (error) throw error;
+  return normalizeFacility(data);
+}
+
+export async function deleteFacility(id) {
+  const sb = await getClient();
+  const { error } = await sb.from('facilities').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- stock (admin) ----------
+export async function addStockItem(facilityId, item, status = 'in_stock') {
+  const sb = await getClient();
+  const { error } = await sb.from('facility_stock')
+    .upsert({ facility_id: facilityId, item, status }, { onConflict: 'facility_id,item' });
+  if (error) throw error;
+}
+
+export async function setStockStatus(stockId, status) {
+  const sb = await getClient();
+  const { error } = await sb.from('facility_stock').update({ status }).eq('id', stockId);
+  if (error) throw error;
+}
+
+export async function removeStockItem(stockId) {
+  const sb = await getClient();
+  const { error } = await sb.from('facility_stock').delete().eq('id', stockId);
+  if (error) throw error;
+}
+
+// ---------- live updates ----------
+export async function subscribeToChanges(onChange) {
+  const sb = await getClient();
+  if (!sb) return;
+  sb.channel('medsoft-facilities')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'facilities' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'facility_stock' }, onChange)
+    .subscribe();
 }
 
 // ---------- auth ----------
@@ -60,13 +151,13 @@ export async function signIn(email, password) {
   return data;
 }
 
-export async function signUp(email, password, fullName) {
+export async function signUp(email, password, fullName, accountType = 'user') {
   const sb = await getClient();
   const { data, error } = await sb.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName },
+      data: { full_name: fullName, account_type: accountType === 'facility_admin' ? 'facility_admin' : 'user' },
       emailRedirectTo: window.location.origin + window.location.pathname,
     },
   });
@@ -81,24 +172,31 @@ export async function signOut() {
   if (error) throw error;
 }
 
+export async function updatePassword(password) {
+  const sb = await getClient();
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 // ---------- profile ----------
 export async function fetchProfile(userId) {
   const sb = await getClient();
   if (!sb || !userId) return null;
-  const { data, error } = await sb.from('profiles').select('id,full_name,city').eq('id', userId).maybeSingle();
+  const { data, error } = await sb.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
   if (error) throw error;
   return data;
 }
 
+// fields: any of full_name, city, phone, default_radius_km, theme, role
 export async function saveProfile(userId, fields) {
   const sb = await getClient();
-  const { data, error } = await sb
-    .from('profiles')
-    .upsert({ id: userId, full_name: fields.full_name, city: fields.city })
-    .select('id,full_name,city')
-    .single();
+  const { data, error } = await sb.from('profiles').update(fields).eq('id', userId).select(PROFILE_COLUMNS).maybeSingle();
   if (error) throw error;
-  return data;
+  if (data) return data;
+  // No profile row yet (account created before the sign-up trigger existed).
+  const created = await sb.from('profiles').insert({ id: userId, ...fields }).select(PROFILE_COLUMNS).single();
+  if (created.error) throw created.error;
+  return created.data;
 }
 
 // ---------- saved places ----------

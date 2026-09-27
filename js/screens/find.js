@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 import { ICON } from '../icons.js';
-import { isOpenNow } from '../utils.js';
+import { isOpenNow, rememberRadius } from '../utils.js';
 import { resultCard, emptyState, loadingList, errorState } from '../components/cards.js';
 import { initMap, syncMap, refreshMapSize, mapAvailable } from './map.js';
 import { toast } from '../components/toast.js';
@@ -13,7 +13,7 @@ export function filteredFacilities() {
     if (f.dist > radius) return false;
     if (type !== 'all' && f.type !== type) return false;
     if (openOnly && !isOpenNow(f)) return false;
-    if (q && !(f.name.toLowerCase().includes(q) || f.stock.some(s => s.toLowerCase().includes(q)))) return false;
+    if (q && !(f.name.toLowerCase().includes(q) || f.stock.some(s => s.status !== 'out' && s.item.toLowerCase().includes(q)))) return false;
     return true;
   }).sort((a, b) => a.dist - b.dist);
 }
@@ -70,6 +70,7 @@ export function bindFind() {
   });
   document.getElementById('radiusSlider').addEventListener('input', e => {
     store.filters.radius = Number(e.target.value);
+    rememberRadius(store.filters.radius);
     renderFind();
   });
 }

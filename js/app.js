@@ -1,17 +1,22 @@
 // Entry point: wires the screens, data layer and events together.
 import { CONFIG } from './config.js';
-import { store } from './store.js';
+import { store, isFacilityAdmin } from './store.js';
 import * as api from './api.js';
 import { hydrateIcons } from './icons.js';
-import { withDistances, getDevicePosition } from './utils.js';
+import { getDevicePosition, applyTheme, rememberRadius } from './utils.js';
+import { loadFacilities, loadMyFacilities, applyPosition, allFacilityIds } from './data.js';
 import { renderNavbars } from './components/navbar.js';
 import { toast } from './components/toast.js';
-import { registerScreen, startRouter, render, go, back, currentRoute } from './router.js';
+import { registerScreen, startRouter, render, go, back, currentRoute, FORM_SCREENS } from './router.js';
 import { renderHome } from './screens/home.js';
 import { renderFind, bindFind, toggleMap, clearFilters } from './screens/find.js';
 import { renderDetail, currentDetailId, updateSaveButton } from './screens/detail.js';
 import { renderSaved } from './screens/saved.js';
 import { renderProfile, setAuthTab } from './screens/profile.js';
+import { renderSettings, settingsActions, settingsChanges, settingsSubmits } from './screens/settings.js';
+import { renderAdmin } from './screens/admin.js';
+import { renderAdminEdit, adminEditActions, adminEditChanges, adminEditSubmits } from './screens/admin-edit.js';
+import { renderAdminStock, adminStockActions, adminStockSubmits } from './screens/admin-stock.js';
 import { refreshMapSize } from './screens/map.js';
 
 registerScreen('home', renderHome);
@@ -19,28 +24,12 @@ registerScreen('find', renderFind);
 registerScreen('detail', renderDetail);
 registerScreen('saved', renderSaved);
 registerScreen('profile', renderProfile);
+registerScreen('settings', renderSettings);
+registerScreen('admin', renderAdmin);
+registerScreen('admin-edit', renderAdminEdit);
+registerScreen('admin-stock', renderAdminStock);
 
-// ---------------- data loading ----------------
-let rawFacilities = [];
-
-function applyPosition() {
-  store.facilities = withDistances(rawFacilities, store.position);
-}
-
-async function loadFacilities() {
-  store.loading = true;
-  store.loadError = null;
-  render();
-  try {
-    rawFacilities = await api.fetchFacilities();
-    applyPosition();
-  } catch (err) {
-    console.error('Failed to load facilities', err);
-    store.loadError = err.message || String(err);
-  } finally {
-    store.loading = false;
-  }
-}
+const isFormScreen = () => FORM_SCREENS.has(currentRoute().screen);
 
 async function loadSaved() {
   try {
@@ -51,8 +40,18 @@ async function loadSaved() {
   }
 }
 
+// Apply settings stored on the account (theme, default radius).
+function applyProfilePreferences() {
+  const p = store.profile;
+  if (!p) return;
+  if (p.theme && p.theme !== store.theme) { store.theme = p.theme; applyTheme(p.theme); }
+  if (p.default_radius_km) { store.filters.radius = p.default_radius_km; rememberRadius(p.default_radius_km); }
+}
+
 // ---------------- auth ----------------
-async function setUser(user) {
+// reloadFacilities: which listings are visible depends on who is signed in
+// (owners also see their own pending listings), so refetch when the account changes.
+async function setUser(user, { reloadFacilities = true } = {}) {
   const previousId = store.user?.id || null;
   store.user = user || null;
   if (store.user?.id === previousId) return false;
@@ -61,9 +60,15 @@ async function setUser(user) {
   if (store.user) {
     try { store.profile = await api.fetchProfile(store.user.id); }
     catch (err) { console.error('Failed to load profile', err); }
-    await api.mergeLocalSavedInto(store.user, new Set(rawFacilities.map(f => f.id)));
+    applyProfilePreferences();
+    await api.mergeLocalSavedInto(store.user, allFacilityIds());
   }
-  await loadSaved();
+  await Promise.all([
+    loadSaved(),
+    loadMyFacilities(),
+    reloadFacilities ? loadFacilities({ quiet: true }) : null,
+  ]);
+  renderNavbars(isFacilityAdmin());
   return true;
 }
 
@@ -81,7 +86,7 @@ async function handleAuthSubmit(form) {
   button.disabled = true;
   try {
     if (isSignup) {
-      const result = await api.signUp(data.email.trim(), data.password, data.full_name.trim());
+      const result = await api.signUp(data.email.trim(), data.password, data.full_name.trim(), data.account_type);
       if (!result.session) {
         setAuthTab('signin');
         renderProfile();
@@ -89,33 +94,14 @@ async function handleAuthSubmit(form) {
         return;
       }
       toast('Account created.');
+      if (data.account_type === 'facility_admin') setTimeout(() => go('admin'), 400);
     } else {
       await api.signIn(data.email.trim(), data.password);
       toast('Signed in.');
     }
-    // onAuthChange updates the screen.
+    // onAuthChange updates the screens.
   } catch (err) {
     errorEl.textContent = err.message || 'Something went wrong. Try again.';
-  } finally {
-    button.disabled = false;
-  }
-}
-
-async function handleProfileSubmit(form) {
-  const errorEl = document.getElementById('profileError');
-  const button = form.querySelector('button[type="submit"]');
-  const data = Object.fromEntries(new FormData(form));
-  errorEl.textContent = '';
-  button.disabled = true;
-  try {
-    store.profile = await api.saveProfile(store.user.id, {
-      full_name: data.full_name.trim() || null,
-      city: data.city.trim() || null,
-    });
-    toast('Changes saved.');
-    renderProfile();
-  } catch (err) {
-    errorEl.textContent = err.message || 'Changes could not be saved.';
   } finally {
     button.disabled = false;
   }
@@ -125,6 +111,7 @@ async function handleSignOut() {
   try {
     await api.signOut();
     toast('Signed out.');
+    go('profile');
   } catch (err) {
     toast(err.message || 'Could not sign out.');
   }
@@ -158,7 +145,7 @@ async function locate({ silent = false } = {}) {
     store.positionSource = 'device';
     applyPosition();
     refreshMapSize(true);
-    render();
+    if (!isFormScreen()) render();
     if (!silent) toast('Using your current location.');
   } catch (err) {
     if (!silent) toast(`${err.message} Showing places near ${CONFIG.DEFAULT_LOCATION.label}.`, 4000);
@@ -167,34 +154,50 @@ async function locate({ silent = false } = {}) {
 
 // ---------------- emergency ----------------
 function openEmergency() {
-  const hospitals = store.facilities.filter(f => f.type === 'hospital').sort((a, b) => a.dist - b.dist);
-  const nearest = hospitals.find(f => f.is24h) || hospitals[0];
+  const care = store.facilities.filter(f => f.type !== 'pharmacy' && f.verified).sort((a, b) => a.dist - b.dist);
+  const nearest = care.find(f => f.type === 'hospital' && f.is24h) || care.find(f => f.is24h) || care[0];
   if (nearest) go('detail', nearest.id);
   else toast(store.loading ? 'Still loading places. Try again in a moment.' : 'No hospitals are listed yet.');
 }
 
 // ---------------- events ----------------
+const ACTIONS = {
+  noop: () => {}, // let links (e.g. Directions) work without opening the card
+  go: el => go(el.dataset.screen),
+  'go-param': el => go(el.dataset.screen, el.dataset.id),
+  'find-type': el => { store.filters.type = el.dataset.type; go('find'); },
+  'open-detail': el => go('detail', el.dataset.id),
+  emergency: () => openEmergency(),
+  back: el => back(el.dataset.fallback || 'find'),
+  'toggle-save': () => toggleSave(),
+  'toggle-map': () => toggleMap(),
+  'clear-filters': () => clearFilters(),
+  locate: () => locate(),
+  retry: () => loadFacilities({ onStart: render }).then(render),
+  'auth-tab': el => { setAuthTab(el.dataset.tab); renderProfile(); },
+  'sign-out': () => handleSignOut(),
+  ...settingsActions,
+  ...adminEditActions,
+  ...adminStockActions,
+};
+
+const SUBMITS = {
+  authForm: handleAuthSubmit,
+  ...settingsSubmits,
+  ...adminEditSubmits,
+  ...adminStockSubmits,
+};
+
+const CHANGES = { ...settingsChanges, ...adminEditChanges };
+
 function bindEvents() {
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-action]');
     if (!el) return;
-    const { action } = el.dataset;
-    switch (action) {
-      case 'noop': return; // let links (e.g. Directions) work without opening the card
-      case 'go': go(el.dataset.screen); break;
-      case 'find-type': store.filters.type = el.dataset.type; go('find'); break;
-      case 'open-detail': go('detail', el.dataset.id); break;
-      case 'emergency': openEmergency(); break;
-      case 'back': back('find'); break;
-      case 'toggle-save': toggleSave(); break;
-      case 'toggle-map': toggleMap(); break;
-      case 'clear-filters': clearFilters(); break;
-      case 'locate': locate(); break;
-      case 'retry': loadFacilities().then(render); break;
-      case 'auth-tab': setAuthTab(el.dataset.tab); renderProfile(); break;
-      case 'sign-out': handleSignOut(); break;
-      default: return;
-    }
+    const handler = ACTIONS[el.dataset.action];
+    if (!handler) return;
+    if (el.dataset.action !== 'noop') e.preventDefault();
+    handler(el);
   });
 
   // Keyboard support for card "buttons".
@@ -206,31 +209,53 @@ function bindEvents() {
   });
 
   document.addEventListener('submit', e => {
-    if (e.target.id === 'authForm') { e.preventDefault(); handleAuthSubmit(e.target); }
-    if (e.target.id === 'profileForm') { e.preventDefault(); handleProfileSubmit(e.target); }
+    const handler = SUBMITS[e.target.id];
+    if (handler) { e.preventDefault(); handler(e.target); }
+  });
+
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-change]');
+    if (el) CHANGES[el.dataset.change]?.(el);
+  });
+
+  // Fired by settings when the account type changes.
+  window.addEventListener('medsoft:profile-changed', async () => {
+    await loadMyFacilities();
+    renderNavbars(isFacilityAdmin());
+    render();
   });
 
   bindFind();
 }
 
+// Live map: re-fetch when any facility or stock changes (debounced).
+let liveTimer;
+function onLiveChange() {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(async () => {
+    await Promise.all([loadFacilities({ quiet: true }), loadMyFacilities()]);
+    if (!isFormScreen()) render();
+  }, 700);
+}
+
 // ---------------- boot ----------------
 async function init() {
   document.title = CONFIG.APP_NAME;
-  const slider = document.getElementById('radiusSlider');
-  slider.max = CONFIG.MAX_RADIUS_KM;
+  applyTheme(store.theme);
+  document.getElementById('radiusSlider').max = CONFIG.MAX_RADIUS_KM;
 
   hydrateIcons(document);
-  renderNavbars();
+  renderNavbars(false);
   bindEvents();
   if (!window.location.hash) history.replaceState(null, '', '#/home');
   startRouter();
 
-  await loadFacilities();
+  await loadFacilities({ onStart: render });
 
   if (store.mode === 'live') {
     try {
       const session = await api.getSession();
-      await setUser(session?.user || null);
+      await setUser(session?.user || null, { reloadFacilities: false }); // just loaded above
     } catch (err) {
       console.error('Auth init failed', err);
       await loadSaved();
@@ -239,6 +264,7 @@ async function init() {
       const changed = await setUser(session?.user || null);
       if (changed) render();
     }).catch(err => console.error('Auth listener failed', err));
+    api.subscribeToChanges(onLiveChange).catch(err => console.error('Live updates unavailable', err));
   } else {
     await loadSaved();
   }
@@ -246,8 +272,8 @@ async function init() {
   render();
   locate({ silent: true });
 
-  // Refresh open/closed badges every minute on the current screen.
-  setInterval(() => { if (currentRoute().screen !== 'profile') render(); }, 60000);
+  // Refresh open/closed badges every minute (not on screens with forms).
+  setInterval(() => { if (!isFormScreen()) render(); }, 60000);
 }
 
 init();

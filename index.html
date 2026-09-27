@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#149A85">
-<meta name="description" content="Find open pharmacies and hospitals near you and see what they have in stock.">
+<meta name="description" content="Find open pharmacies, clinics and hospitals near you and see what they have in stock.">
 <title>Medsoft</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/accounts.css">
 </head>
 <body>
 <div id="phone">
@@ -28,14 +29,14 @@
         <button class="iconbtn" data-action="locate" aria-label="Use my current location"><span data-icon="target"></span></button>
       </div>
       <button class="search-bar" data-action="go" data-screen="find">
-        <span data-icon="find"></span><span>Search medicine, pharmacy, hospital…</span>
+        <span data-icon="find"></span><span>Search medicine, pharmacy, clinic…</span>
       </button>
       <p class="demo-note hidden" id="demoNote">Showing sample places. Connect Supabase in <b>js/config.js</b> to load real data.</p>
       <div class="actions">
         <button class="action" data-action="find-type" data-type="pharmacy"><div class="ic tone-primary"><span data-icon="pill"></span></div><span>Pharmacies</span></button>
         <button class="action" data-action="find-type" data-type="hospital"><div class="ic tone-coral"><span data-icon="heart"></span></div><span>Hospitals</span></button>
         <button class="action" data-action="emergency"><div class="ic tone-amber"><span data-icon="info"></span></div><span>Emergency</span></button>
-        <button class="action" data-action="find-type" data-type="all"><div class="ic tone-primary"><span data-icon="find"></span></div><span>Search</span></button>
+        <button class="action" data-action="find-type" data-type="clinic"><div class="ic tone-amber"><span data-icon="building"></span></div><span>Clinics</span></button>
       </div>
       <div class="banner">
         <h3>Need urgent care?</h3>
@@ -67,6 +68,7 @@
     <div class="chips" id="typeChips">
       <button class="chip active" data-type="all">All</button>
       <button class="chip" data-type="pharmacy">Pharmacies</button>
+      <button class="chip" data-type="clinic">Clinics</button>
       <button class="chip" data-type="hospital">Hospitals</button>
       <button class="chip" data-open="1">Open now</button>
     </div>
@@ -83,7 +85,7 @@
   <section class="screen" id="scr-detail" aria-label="Location details">
     <div class="scroll">
       <div class="detail-head">
-        <button class="iconbtn" data-action="back" aria-label="Back"><span data-icon="back"></span></button>
+        <button class="iconbtn" data-action="back" data-fallback="find" aria-label="Back"><span data-icon="back"></span></button>
         <h2>Location details</h2>
         <button class="iconbtn" id="saveBtn" data-action="toggle-save" aria-label="Save this place"><span data-icon="bookmark"></span></button>
       </div>
@@ -109,6 +111,43 @@
       <div id="profileBody"></div>
     </div>
     <nav class="navbar" data-nav aria-label="Main"></nav>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="scr-settings" aria-label="Settings">
+    <div class="detail-head">
+      <button class="iconbtn" data-action="back" data-fallback="profile" aria-label="Back"><span data-icon="back"></span></button>
+      <h2>Settings</h2>
+      <span class="head-spacer"></span>
+    </div>
+    <div class="scroll"><div id="settingsBody"></div></div>
+  </section>
+
+  <!-- ADMIN: MY FACILITIES -->
+  <section class="screen" id="scr-admin" aria-label="My facilities">
+    <div class="topbar"><h2 class="screen-title">My facilities</h2></div>
+    <div class="scroll"><div id="adminBody"></div></div>
+    <nav class="navbar" data-nav aria-label="Main"></nav>
+  </section>
+
+  <!-- ADMIN: ADD / EDIT FACILITY -->
+  <section class="screen" id="scr-admin-edit" aria-label="Edit facility">
+    <div class="detail-head">
+      <button class="iconbtn" data-action="back" data-fallback="admin" aria-label="Back"><span data-icon="back"></span></button>
+      <h2 id="adminEditTitle">Facility</h2>
+      <span class="head-spacer"></span>
+    </div>
+    <div class="scroll"><div id="adminEditBody"></div></div>
+  </section>
+
+  <!-- ADMIN: STOCK -->
+  <section class="screen" id="scr-admin-stock" aria-label="Update stock">
+    <div class="detail-head">
+      <button class="iconbtn" data-action="back" data-fallback="admin" aria-label="Back"><span data-icon="back"></span></button>
+      <h2>Update stock</h2>
+      <span class="head-spacer"></span>
+    </div>
+    <div class="scroll"><div id="adminStockBody"></div></div>
   </section>
 
   <div id="toast" role="status" aria-live="polite"></div>

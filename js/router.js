@@ -1,8 +1,13 @@
-// Hash-based router: #/home, #/find, #/detail/3, #/saved, #/profile.
+// Hash-based router: #/home, #/find, #/detail/3, #/saved, #/profile, #/settings,
+// #/admin, #/admin-edit/new, #/admin-edit/3, #/admin-stock/3.
 // Works on GitHub Pages (no server rewrites needed) and keeps the back button working.
 import { setActiveNav } from './components/navbar.js';
 
-const SCREENS = ['home', 'find', 'detail', 'saved', 'profile'];
+const SCREENS = ['home', 'find', 'detail', 'saved', 'profile', 'settings', 'admin', 'admin-edit', 'admin-stock'];
+
+// Screens with forms: background refreshes must not re-render these and wipe what's being typed.
+export const FORM_SCREENS = new Set(['profile', 'settings', 'admin-edit', 'admin-stock']);
+
 const renderers = {};
 let internalNavigations = 0;
 

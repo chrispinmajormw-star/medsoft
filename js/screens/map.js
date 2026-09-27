@@ -1,19 +1,19 @@
 // Leaflet map for the Find screen. Leaflet is loaded as a global <script> in index.html.
 import { store } from '../store.js';
-import { esc, km, isOpenNow } from '../utils.js';
+import { esc, km, isOpenNow, typeInfo } from '../utils.js';
 
 let mapObj = null;
 let userMarker = null;
 let radiusCircle = null;
 const markers = new Map();
 
-const colorFor = type => (type === 'pharmacy' ? '#149A85' : '#D5695A');
+const colorFor = type => typeInfo(type).color;
 
 function pinIcon(f) {
   const hex = colorFor(f.type);
   const html = `<div style="position:relative;width:28px;height:36px;${isOpenNow(f) ? '' : 'opacity:.55'}">
     <svg width="28" height="36" viewBox="0 0 28 36"><path d="M14 0C6.3 0 0 6.3 0 14c0 9.8 14 22 14 22s14-12.2 14-22C28 6.3 21.7 0 14 0z" fill="${hex}"/><circle cx="14" cy="14" r="8.5" fill="#fff"/></svg>
-    <div style="position:absolute;top:5px;left:0;width:28px;text-align:center;color:${hex};font-weight:700;font-size:12px;font-family:'Space Grotesk',sans-serif">${f.type === 'pharmacy' ? 'Rx' : 'H'}</div>
+    <div style="position:absolute;top:5px;left:0;width:28px;text-align:center;color:${hex};font-weight:700;font-size:12px;font-family:'Space Grotesk',sans-serif">${typeInfo(f.type).letter}</div>
   </div>`;
   return L.divIcon({ html, className: '', iconSize: [28, 36], iconAnchor: [14, 34], popupAnchor: [0, -32] });
 }
@@ -52,6 +52,7 @@ export function syncMap(items) {
       m.on('click', () => mapObj._onSelect?.(f.id));
       markers.set(f.id, m);
     }
+    m.setLatLng([f.lat, f.lng]); // admins can move their pin
     m.setIcon(pinIcon(f));
     m.bindTooltip(`<b>${esc(f.name)}</b><br>${km(f.dist)}, ${isOpenNow(f) ? 'open now' : 'closed'}`, { direction: 'top', offset: [0, -30] });
   });
