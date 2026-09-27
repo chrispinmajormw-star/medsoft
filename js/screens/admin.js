@@ -2,7 +2,7 @@
 import { store, isFacilityAdmin } from '../store.js';
 import { ICON } from '../icons.js';
 import { CONFIG } from '../config.js';
-import { esc, typeLabel, timeAgo } from '../utils.js';
+import { esc, typeLabel, timeAgo, KINDS, itemsOf } from '../utils.js';
 import { badge, emptyState } from '../components/cards.js';
 
 function statusPill(f) {
@@ -11,13 +11,21 @@ function statusPill(f) {
   return '<span class="pill open">Live on map</span>';
 }
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 function stockSummary(f) {
-  if (!f.stock.length) return 'No stock listed yet';
-  const low = f.stock.filter(s => s.status === 'low').length;
-  const out = f.stock.filter(s => s.status === 'out').length;
-  const parts = [`${f.stock.length} item${f.stock.length === 1 ? '' : 's'}`];
+  if (!f.stock.length) return 'No medications, services or equipment listed yet';
+  const parts = KINDS.map(k => {
+    const n = itemsOf(f, k.id).length;
+    return `${n} ${n === 1 ? k.singular : k.plural}`;
+  });
+  const sold = f.stock.filter(s => s.kind !== 'service');
+  const low = sold.filter(s => s.status === 'low').length;
+  const out = sold.filter(s => s.status === 'out').length;
+  const unavailable = itemsOf(f, 'service').filter(s => s.status === 'out').length;
   if (low) parts.push(`${low} running low`);
-  if (out) parts.push(`${out} out`);
+  if (out) parts.push(`${out} out of stock`);
+  if (unavailable) parts.push(`${plural(unavailable, 'service')} unavailable`);
   return parts.join(', ');
 }
 
@@ -35,7 +43,7 @@ function facilityCard(f) {
       </div>
       <p class="admin-meta">${stockSummary(f)}${updated ? `. Updated ${timeAgo(updated)}` : ''}</p>
       <div class="admin-actions">
-        <button class="btn btn-sm" data-action="go-param" data-screen="admin-stock" data-id="${f.id}">${ICON.box} Update stock</button>
+        <button class="btn btn-sm" data-action="go-param" data-screen="admin-stock" data-id="${f.id}">${ICON.box} Stock & services</button>
         <button class="btn btn-sm btn-outline" data-action="go-param" data-screen="admin-edit" data-id="${f.id}">${ICON.edit} Edit details</button>
         <button class="btn btn-sm btn-outline" data-action="open-detail" data-id="${f.id}">View listing</button>
       </div>

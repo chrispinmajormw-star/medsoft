@@ -1,6 +1,6 @@
 import { store, facilityById } from '../store.js';
 import { ICON } from '../icons.js';
-import { esc, isOpenNow, hoursLabel, typeLabel, km, directionsUrl, telUrl, timeAgo, STOCK_STATUS } from '../utils.js';
+import { esc, isOpenNow, hoursLabel, typeLabel, km, directionsUrl, telUrl, timeAgo, statusLabels, KINDS, itemsOf } from '../utils.js';
 import { emptyState, loadingList, errorState, stockTag } from '../components/cards.js';
 
 let currentId = null;
@@ -14,14 +14,15 @@ export function updateSaveButton() {
   btn.setAttribute('aria-pressed', String(isSaved));
 }
 
-function stockSection(f) {
-  if (!f.stock.length) return '<div class="stock"><span class="tag">No stock listed</span></div>';
-  const groups = ['in_stock', 'low', 'out']
-    .map(status => ({ status, items: f.stock.filter(s => s.status === status) }))
-    .filter(g => g.items.length);
-  return groups.map(g => `
-    <p class="stock-group">${STOCK_STATUS[g.status]}</p>
-    <div class="stock">${g.items.map(s => stockTag(s)).join('')}</div>`).join('');
+// One section per kind, grouped by level (In stock / Running low / Out, or Available / Limited / Unavailable).
+function listSection(list, kind) {
+  const labels = statusLabels(kind);
+  return ['in_stock', 'low', 'out']
+    .map(status => ({ status, items: list.filter(s => s.status === status) }))
+    .filter(g => g.items.length)
+    .map(g => `
+      <p class="stock-group">${labels[g.status]}</p>
+      <div class="stock">${g.items.map(s => stockTag(s)).join('')}</div>`).join('');
 }
 
 export function renderDetail(param) {
@@ -59,14 +60,15 @@ export function renderDetail(param) {
       ${f.reviews ? `<div class="info-row"><span>Rating</span><span>${f.rating.toFixed(1)} ★ (${f.reviews})</span></div>` : ''}
     </div>
     <div class="note">${ICON.info}<span>Call ahead to confirm they still have what you need in stock.</span></div>
+    ${KINDS.filter(k => itemsOf(f, k.id).length).map(k => `
     <div class="stockwrap">
-      <h4>What they have</h4>
-      ${stockSection(f)}
-      ${stockUpdated && store.mode === 'live' ? `<p class="stock-updated">Stock updated ${timeAgo(stockUpdated)}</p>` : ''}
-    </div>
+      <h4>${k.heading}</h4>
+      ${listSection(itemsOf(f, k.id), k.id)}
+    </div>`).join('') || '<div class="stockwrap"><div class="stock"><span class="tag">No medications, services or equipment listed yet</span></div></div>'}
+    ${stockUpdated && store.mode === 'live' ? `<p class="stock-updated stockwrap">Updated ${timeAgo(stockUpdated)}</p>` : ''}
     ${isOwner ? `<div class="btnrow owner-row">
       <button class="btn btn-outline" data-action="go-param" data-screen="admin-edit" data-id="${f.id}">${ICON.edit} Edit details</button>
-      <button class="btn btn-outline" data-action="go-param" data-screen="admin-stock" data-id="${f.id}">${ICON.box} Update stock</button>
+      <button class="btn btn-outline" data-action="go-param" data-screen="admin-stock" data-id="${f.id}">${ICON.box} Stock & services</button>
     </div>` : ''}`;
 
   actions.classList.remove('hidden');

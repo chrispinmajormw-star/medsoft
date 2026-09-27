@@ -2,7 +2,7 @@
 import { store, myFacilityById, isFacilityAdmin } from '../store.js';
 import { ICON } from '../icons.js';
 import * as api from '../api.js';
-import { esc, FACILITY_TYPES, getDevicePosition, typeInfo } from '../utils.js';
+import { esc, FACILITY_TYPES, getDevicePosition, typeInfo, servicesOf, SUGGESTED_SERVICES } from '../utils.js';
 import { emptyState } from '../components/cards.js';
 import { toast } from '../components/toast.js';
 import { go } from '../router.js';
@@ -46,6 +46,21 @@ function initPicker(lat, lng, type) {
   setTimeout(() => picker && picker.invalidateSize(), 80);
 }
 
+// Ticked services survive a change of facility type; custom ones stay listed.
+let serviceChoices = new Map(); // lowercased name -> { name, checked }
+
+function renderServiceChecks(type) {
+  const box = document.getElementById('serviceChecks');
+  if (!box) return;
+  const suggested = SUGGESTED_SERVICES[type] || [];
+  suggested.forEach(n => { if (!serviceChoices.has(n.toLowerCase())) serviceChoices.set(n.toLowerCase(), { name: n, checked: false }); });
+  // Show this type's suggestions, plus anything ticked or custom from before.
+  const shown = [...serviceChoices.values()].filter(c => c.checked || c.custom || suggested.includes(c.name));
+  box.innerHTML = shown.map(c => `
+    <label class="check-chip"><input type="checkbox" name="services" value="${esc(c.name)}" ${c.checked ? 'checked' : ''} data-change="service-check">
+      <span>${esc(c.name)}</span></label>`).join('');
+}
+
 function form(f) {
   const v = f || {};
   const is24h = Boolean(v.is24h);
@@ -73,6 +88,18 @@ function form(f) {
           <div class="row-2 ${is24h ? 'hidden' : ''}" id="hoursRow">
             <label class="field">Opens<input name="open_time" type="time" value="${esc(v.openTime || '')}"></label>
             <label class="field">Closes<input name="close_time" type="time" value="${esc(v.closeTime || '')}"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>Services offered</h3>
+        <div class="form">
+          <p class="picker-hint">Tick everything you offer. You can mark a service unavailable for the day on the stock screen.</p>
+          <div class="service-checks" id="serviceChecks"></div>
+          <div class="add-inline">
+            <input id="customService" maxlength="80" placeholder="Other service, e.g. Physiotherapy" aria-label="Other service">
+            <button type="button" class="btn btn-sm btn-outline" data-action="add-custom-service">Add</button>
           </div>
         </div>
       </div>
@@ -136,6 +163,13 @@ export function renderAdminEdit(param) {
   editingId = f ? f.id : null;
   title.textContent = f ? 'Edit facility' : 'Add your facility';
   body.innerHTML = form(f);
+  serviceChoices = new Map();
+  (f ? servicesOf(f) : []).forEach(s => serviceChoices.set(s.item.toLowerCase(), { name: s.item, checked: true, custom: true }));
+  renderServiceChecks(f ? f.type : 'pharmacy');
+  // Enter in "Other service" adds it instead of submitting the whole form.
+  document.getElementById('customService').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); adminEditActions['add-custom-service'](); }
+  });
   const lat = f ? f.lat : store.position.lat;
   const lng = f ? f.lng : store.position.lng;
   setCoords(lat, lng);
@@ -183,16 +217,19 @@ export const adminEditSubmits = {
     const before = editingId ? myFacilityById(editingId) : null;
     button.disabled = true;
     try {
+      const wantedServices = [...serviceChoices.values()].filter(c => c.checked).map(c => c.name);
       if (editingId) {
         const saved = await api.updateFacility(editingId, fields);
+        await api.syncServices(editingId, servicesOf(before), wantedServices);
         await refreshAfterAdminChange();
         const reverify = before?.verified && !saved.verified;
         toast(reverify ? 'Saved. Changing the name or type means it will be verified again.' : 'Changes saved.', reverify ? 5000 : 2800);
         go('admin');
       } else {
         const created = await api.createFacility(fields);
+        await api.syncServices(created.id, [], wantedServices);
         await refreshAfterAdminChange();
-        toast('Facility added. Now list what you have in stock.', 4000);
+        toast('Facility added. Now list your medications and any equipment you sell.', 4000);
         go('admin-stock', created.id);
       }
     } catch (err) {
@@ -218,6 +255,17 @@ export const adminEditActions = {
       el.disabled = false;
     }
   },
+  'add-custom-service': () => {
+    const input = document.getElementById('customService');
+    const name = input.value.trim().replace(/\s+/g, ' ');
+    if (!name) { input.focus(); return; }
+    const key = name.toLowerCase();
+    const existing = serviceChoices.get(key);
+    serviceChoices.set(key, { name: existing?.name || name, checked: true, custom: true });
+    renderServiceChecks(document.querySelector('#facilityForm [name="type"]').value);
+    input.value = '';
+    input.focus();
+  },
   'delete-facility': async () => {
     const f = myFacilityById(editingId);
     if (!f) return;
@@ -235,6 +283,13 @@ export const adminEditActions = {
 
 export const adminEditChanges = {
   'toggle-24h': el => document.getElementById('hoursRow')?.classList.toggle('hidden', el.checked),
-  'facility-type': el => { if (pickerMarker) pickerMarker.setIcon(pinIcon(el.value)); },
+  'facility-type': el => {
+    if (pickerMarker) pickerMarker.setIcon(pinIcon(el.value));
+    renderServiceChecks(el.value);
+  },
+  'service-check': el => {
+    const c = serviceChoices.get(el.value.toLowerCase());
+    if (c) c.checked = el.checked;
+  },
 };
 

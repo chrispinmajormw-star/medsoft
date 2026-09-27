@@ -3,12 +3,13 @@
 // and keeps saved places in localStorage.
 import { getClient } from './supabase-client.js';
 import { SEED_FACILITIES } from './seed-data.js';
+import { normalizeKind } from './utils.js';
 
 const LOCAL_SAVED_KEY = 'medsoft:saved';
 const FACILITY_COLUMNS = [
   'id', 'name', 'type', 'lat', 'lng', 'is_24h', 'open_time', 'close_time', 'phone', 'address', 'city',
   'rating', 'reviews_count', 'verified', 'is_active', 'notice', 'owner_id', 'updated_at', 'stock_updated_at',
-  'facility_stock(id,item,status,updated_at)',
+  'facility_stock(id,item,status,kind,updated_at)',
 ].join(',');
 const PROFILE_COLUMNS = 'id,full_name,city,phone,default_radius_km,theme,role';
 
@@ -23,8 +24,14 @@ function normalizeStock(list) {
   if (!Array.isArray(list)) return [];
   return list
     .map(s => (typeof s === 'string'
-      ? { id: null, item: s, status: 'in_stock', updatedAt: null }
-      : { id: Number(s.id), item: s.item, status: s.status || 'in_stock', updatedAt: s.updated_at || null }))
+      ? { id: null, item: s, status: 'in_stock', kind: 'medicine', updatedAt: null }
+      : {
+        id: s.id != null ? Number(s.id) : null,
+        item: s.item,
+        status: s.status || 'in_stock',
+        kind: normalizeKind(s.kind),
+        updatedAt: s.updated_at || null,
+      }))
     .sort((a, b) => (STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) || a.item.localeCompare(b.item));
 }
 
@@ -99,11 +106,31 @@ export async function deleteFacility(id) {
 }
 
 // ---------- stock (admin) ----------
-export async function addStockItem(facilityId, item, status = 'in_stock') {
+// kind: 'medicine', 'service' or 'equipment'
+export async function addStockItem(facilityId, item, status = 'in_stock', kind = 'medicine') {
   const sb = await getClient();
   const { error } = await sb.from('facility_stock')
-    .upsert({ facility_id: facilityId, item, status }, { onConflict: 'facility_id,item' });
+    .upsert({ facility_id: facilityId, item, status, kind }, { onConflict: 'facility_id,item' });
   if (error) throw error;
+}
+
+// Make the facility's services match `wanted` (names): add missing ones, remove unticked ones.
+export async function syncServices(facilityId, currentServices, wanted) {
+  const want = new Map(wanted.map(n => [n.toLowerCase(), n]));
+  const have = new Map(currentServices.map(s => [s.item.toLowerCase(), s]));
+  const toAdd = [...want.keys()].filter(k => !have.has(k)).map(k => want.get(k));
+  const toRemove = [...have.keys()].filter(k => !want.has(k)).map(k => have.get(k).id);
+  const sb = await getClient();
+  if (toAdd.length) {
+    const { error } = await sb.from('facility_stock').upsert(
+      toAdd.map(item => ({ facility_id: facilityId, item, status: 'in_stock', kind: 'service' })),
+      { onConflict: 'facility_id,item' });
+    if (error) throw error;
+  }
+  if (toRemove.length) {
+    const { error } = await sb.from('facility_stock').delete().in('id', toRemove);
+    if (error) throw error;
+  }
 }
 
 export async function setStockStatus(stockId, status) {

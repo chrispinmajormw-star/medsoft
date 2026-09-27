@@ -13,6 +13,41 @@ export const STOCK_STATUS = {
   low: 'Running low',
   out: 'Out of stock',
 };
+export const SERVICE_STATUS = {
+  in_stock: 'Available',
+  low: 'Limited',
+  out: 'Unavailable',
+};
+// What a facility can list. `id` is the value stored in facility_stock.kind.
+// Order here is the order shown on screens.
+export const KINDS = [
+  { id: 'service', label: 'Services', heading: 'Services offered', singular: 'service', plural: 'services', statuses: SERVICE_STATUS },
+  { id: 'medicine', label: 'Medications', heading: 'Medications (drugs)', singular: 'medication', plural: 'medications', statuses: STOCK_STATUS },
+  { id: 'equipment', label: 'Equipment', heading: 'Equipment for sale', singular: 'equipment item', plural: 'equipment items', statuses: STOCK_STATUS },
+];
+export const kindInfo = kind => KINDS.find(k => k.id === kind) || KINDS[1];
+export const normalizeKind = kind => (KINDS.some(k => k.id === kind) ? kind : 'medicine');
+
+// Status labels worded for the kind (e.g. "Running low" vs "Limited").
+export const statusLabels = kind => kindInfo(kind).statuses;
+
+export const itemsOf = (f, kind) => f.stock.filter(s => s.kind === kind);
+export const medicinesOf = f => itemsOf(f, 'medicine');
+export const servicesOf = f => itemsOf(f, 'service');
+export const equipmentOf = f => itemsOf(f, 'equipment');
+
+// Suggested services for the facility form, by facility type.
+const SERVICES_COMMON = [
+  'General consultation', 'Malaria testing', 'HIV testing and counselling', 'Family planning', 'Vaccination',
+  'Blood pressure check', 'Blood sugar test', 'Laboratory tests', 'Wound dressing', 'TB screening',
+];
+export const SUGGESTED_SERVICES = {
+  pharmacy: ['Prescription dispensing', 'Medicine advice', 'Blood pressure check', 'Blood sugar test',
+    'Malaria testing', 'Pregnancy test', 'Family planning', 'Home delivery'],
+  clinic: [...SERVICES_COMMON, 'Antenatal care', 'Dental care', 'Eye clinic', 'Minor surgery', 'Nutrition counselling'],
+  hospital: [...SERVICES_COMMON, 'Emergency care', 'Maternity ward', 'Antenatal care', 'X-ray', 'Ultrasound', 'Surgery',
+    'ICU', 'Oxygen', 'Blood transfusion', 'Ambulance', 'Dental care', 'Eye clinic', 'Physiotherapy', 'Mental health services'],
+};
 
 export function haversineKm(a, b) {
   const R = 6371, tr = d => d * Math.PI / 180;

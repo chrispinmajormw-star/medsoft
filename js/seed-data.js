@@ -1,5 +1,5 @@
 // Sample facilities used in demo mode (when Supabase is not configured).
-// Same shape as rows in the public.facilities table. Generated alongside supabase/seed.sql.
+// Same shape as the live query: facility_stock holds medicines and services.
 export const SEED_FACILITIES = [
   {
     "id": 1,
@@ -14,14 +14,49 @@ export const SEED_FACILITIES = [
     "address": "Kamuzu Rd, Area 9",
     "rating": 4.8,
     "reviews_count": 132,
-    "stock": [
-      "Amoxicillin",
-      "Paracetamol",
-      "ORS Sachets",
-      "Insulin",
-      "Malaria test kits"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Amoxicillin",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Paracetamol",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "ORS Sachets",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Insulin",
+        "status": "low",
+        "kind": "medicine"
+      },
+      {
+        "item": "Malaria test kits",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Blood pressure check",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Blood pressure monitor",
+        "status": "in_stock",
+        "kind": "equipment"
+      },
+      {
+        "item": "Glucometer",
+        "status": "low",
+        "kind": "equipment"
+      }
+    ]
   },
   {
     "id": 2,
@@ -36,14 +71,34 @@ export const SEED_FACILITIES = [
     "address": "Presidential Way, Area 18",
     "rating": 4.6,
     "reviews_count": 98,
-    "stock": [
-      "Emergency care",
-      "Maternity ward",
-      "X-ray",
-      "Blood tests",
-      "Wound dressing"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Emergency care",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Maternity ward",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "X-ray",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Blood tests",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Wound dressing",
+        "status": "in_stock",
+        "kind": "service"
+      }
+    ]
   },
   {
     "id": 3,
@@ -58,13 +113,29 @@ export const SEED_FACILITIES = [
     "address": "Convention Dr, City Centre",
     "rating": 4.3,
     "reviews_count": 57,
-    "stock": [
-      "Ibuprofen",
-      "Cough syrup",
-      "Antihistamines",
-      "Contraceptives"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Ibuprofen",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Cough syrup",
+        "status": "out",
+        "kind": "medicine"
+      },
+      {
+        "item": "Antihistamines",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Contraceptives",
+        "status": "in_stock",
+        "kind": "medicine"
+      }
+    ]
   },
   {
     "id": 4,
@@ -79,14 +150,34 @@ export const SEED_FACILITIES = [
     "address": "Mchinji Rd, Area 4",
     "rating": 4.5,
     "reviews_count": 410,
-    "stock": [
-      "Emergency care",
-      "Surgery",
-      "ICU",
-      "Oxygen",
-      "Blood transfusion"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Emergency care",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Surgery",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "ICU",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Oxygen",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Blood transfusion",
+        "status": "in_stock",
+        "kind": "service"
+      }
+    ]
   },
   {
     "id": 5,
@@ -101,13 +192,34 @@ export const SEED_FACILITIES = [
     "address": "Malangalanga Rd, Old Town",
     "rating": 4.4,
     "reviews_count": 76,
-    "stock": [
-      "Paracetamol",
-      "Amoxicillin",
-      "Vitamins",
-      "Diabetes test strips"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Paracetamol",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Amoxicillin",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Vitamins",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Diabetes test strips",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Digital thermometer",
+        "status": "in_stock",
+        "kind": "equipment"
+      }
+    ]
   },
   {
     "id": 6,
@@ -122,13 +234,29 @@ export const SEED_FACILITIES = [
     "address": "Area 25 Roundabout",
     "rating": 4.2,
     "reviews_count": 41,
-    "stock": [
-      "General consultation",
-      "Vaccination",
-      "Malaria test kits",
-      "ORS Sachets"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "General consultation",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Vaccination",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Malaria test kits",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "ORS Sachets",
+        "status": "in_stock",
+        "kind": "medicine"
+      }
+    ]
   },
   {
     "id": 7,
@@ -143,13 +271,44 @@ export const SEED_FACILITIES = [
     "address": "Capital Hill, City Centre",
     "rating": 4.7,
     "reviews_count": 89,
-    "stock": [
-      "Antibiotics",
-      "Painkillers",
-      "Insulin",
-      "Baby formula"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "Antibiotics",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Painkillers",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Insulin",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Baby formula",
+        "status": "in_stock",
+        "kind": "medicine"
+      },
+      {
+        "item": "Prescription dispensing",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Wheelchair",
+        "status": "in_stock",
+        "kind": "equipment"
+      },
+      {
+        "item": "Pulse oximeter",
+        "status": "in_stock",
+        "kind": "equipment"
+      }
+    ]
   },
   {
     "id": 8,
@@ -164,12 +323,28 @@ export const SEED_FACILITIES = [
     "address": "Riverside Dr, Area 3",
     "rating": 4.1,
     "reviews_count": 63,
-    "stock": [
-      "General consultation",
-      "Dental care",
-      "Eye clinic",
-      "X-ray"
-    ],
-    "verified": true
+    "verified": true,
+    "facility_stock": [
+      {
+        "item": "General consultation",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Dental care",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "Eye clinic",
+        "status": "in_stock",
+        "kind": "service"
+      },
+      {
+        "item": "X-ray",
+        "status": "low",
+        "kind": "service"
+      }
+    ]
   }
 ];
