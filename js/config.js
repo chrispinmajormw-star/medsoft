@@ -8,8 +8,8 @@
 export const CONFIG = {
   APP_NAME: 'Medsoft',
 
-  SUPABASE_URL: '',        // e.g. 'https://abcdefghijkl.supabase.co'
-  SUPABASE_ANON_KEY: '',   // e.g. 'eyJhbGciOi...' or 'sb_publishable_...'
+  SUPABASE_URL: 'https://mfxyopjyilqkkgusagii.supabase.co',        // e.g. 'https://abcdefghijkl.supabase.co'
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1meHlvcGp5aWxxa2tndXNhZ2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0ODk2MDgsImV4cCI6MjEwNjA2NTYwOH0.wR0vBxLFngcp3J_2S9j10wBcr16rFnD797JOnvoUSYY',   // e.g. 'eyJhbGciOi...' or 'sb_publishable_...'
 
   // Used until the browser shares the person's real location (or if they decline).
   DEFAULT_LOCATION: { lat: -13.9626, lng: 33.7741, label: 'Lilongwe, Malawi' },
