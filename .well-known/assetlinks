@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "cd.cc.medsoft.twa",
+        "sha256_cert_fingerprints": ["F8:03:50:90:74:16:70:5C:8B:A2:A6:5C:D9:D9:C7:F3:4B:F7:43:5C:39:58:4A:8E:C8:12:BC:B0:28:D9:5A:F4"]
+      }
+    }]
