@@ -18,8 +18,6 @@ import { renderAdmin } from './screens/admin.js';
 import { renderAdminEdit, adminEditActions, adminEditChanges, adminEditSubmits } from './screens/admin-edit.js';
 import { renderAdminStock, adminStockActions, adminStockSubmits } from './screens/admin-stock.js';
 import { renderSysadmin, sysadminActions } from './screens/sysadmin.js';
-import { renderLocation, locationActions } from './screens/location.js';
-import { restoreLocalLocation, savedChoice, locationFromProfile, saveLocation, useDeviceLocation, applyLocation } from './location.js';
 import { refreshMapSize } from './screens/map.js';
 
 registerScreen('home', renderHome);
@@ -32,7 +30,6 @@ registerScreen('admin', renderAdmin);
 registerScreen('admin-edit', renderAdminEdit);
 registerScreen('admin-stock', renderAdminStock);
 registerScreen('sysadmin', renderSysadmin);
-registerScreen('location', renderLocation);
 
 const isFormScreen = () => FORM_SCREENS.has(currentRoute().screen);
 
@@ -68,7 +65,6 @@ async function setUser(user, { reloadFacilities = true } = {}) {
     catch (err) { console.error('Failed to load profile', err); }
     store.isSystemAdmin = await api.fetchIsSystemAdmin(store.user);
     applyProfilePreferences();
-    await syncLocationWithAccount();
     await api.mergeLocalSavedInto(store.user, allFacilityIds());
   }
   await Promise.all([
@@ -147,64 +143,21 @@ async function toggleSave() {
 }
 
 // ---------------- location ----------------
-const accountSaver = () => (store.mode === 'live' && store.user
-  ? fields => api.saveProfile(store.user.id, fields).then(p => { store.profile = p; })
-  : null);
-
-// "Use my current location": the user chooses to follow GPS.
-async function locate() {
+async function locate({ silent = false } = {}) {
   try {
-    const loc = await useDeviceLocation();
-    await saveLocation(loc, accountSaver()).catch(err => console.error('Location not saved to account', err));
+    store.position = await getDevicePosition();
+    store.positionSource = 'device';
     applyPosition();
     refreshMapSize(true);
     if (!isFormScreen()) render();
-    toast('Following your current location.');
+    if (!silent) toast('Using your current location.');
   } catch (err) {
-    toast(`${err.message} You can choose a place instead.`, 4000);
-    go('location');
+    if (!silent) toast(`${err.message} Showing places near ${CONFIG.DEFAULT_LOCATION.label}.`, 4000);
   }
-}
-
-// Someone who chose "follow GPS": refresh the position quietly when the app opens.
-async function refreshDeviceLocation() {
-  if (savedChoice()?.mode !== 'device') return; // only for people who chose "follow GPS"
-  try {
-    const p = await getDevicePosition();
-    applyLocation({ mode: 'device', lat: p.lat, lng: p.lng, label: store.positionLabel });
-    await saveLocation({ mode: 'device', lat: p.lat, lng: p.lng, label: store.positionLabel }, null);
-    applyPosition();
-    refreshMapSize(true);
-    if (!isFormScreen()) render();
-  } catch {
-    // GPS off or denied: keep the last known position (if any); the user can choose a place.
-  }
-}
-
-async function syncLocationWithAccount() {
-  const fromAccount = locationFromProfile(store.profile);
-  const onPhone = restoreLocalLocation();
-  if (onPhone) {
-    // This phone's choice stands; make sure the account has it too.
-    const differs = !fromAccount || fromAccount.mode !== onPhone.mode
-      || (onPhone.mode === 'chosen' && (fromAccount.lat !== onPhone.lat || fromAccount.lng !== onPhone.lng));
-    if (differs) await saveLocation(onPhone, accountSaver()).catch(() => {});
-  } else if (fromAccount) {
-    await saveLocation(fromAccount, null); // e.g. signing in on a new phone
-    if (fromAccount.mode === 'device') refreshDeviceLocation();
-  }
-  applyPosition();
 }
 
 // ---------------- emergency ----------------
 function openEmergency() {
-  if (!store.position) {
-    // Without a location we can't say which is nearest: show every hospital instead.
-    Object.assign(store.filters, { type: 'hospital', query: '', openOnly: false });
-    go('find');
-    toast('Set your location to find the nearest hospital. Showing all hospitals.', 4500);
-    return;
-  }
   const care = store.facilities.filter(f => f.type !== 'pharmacy' && f.verified).sort((a, b) => a.dist - b.dist);
   const nearest = care.find(f => f.type === 'hospital' && f.is24h) || care.find(f => f.is24h) || care[0];
   if (nearest) go('detail', nearest.id);
@@ -231,7 +184,6 @@ const ACTIONS = {
   ...adminEditActions,
   ...adminStockActions,
   ...sysadminActions,
-  ...locationActions,
 };
 
 const SUBMITS = {
@@ -303,7 +255,6 @@ async function init() {
   if (!window.location.hash) history.replaceState(null, '', '#/home');
   startRouter();
 
-  restoreLocalLocation(); // the user's own choice from last time (or none)
   await loadFacilities({ onStart: render });
 
   if (store.mode === 'live') {
@@ -324,7 +275,7 @@ async function init() {
   }
 
   render();
-  refreshDeviceLocation();
+  locate({ silent: true });
 
   // Installable app + opens offline (see sw.js). Needs https (or localhost).
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

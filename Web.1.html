@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Alex Morgan - Graphics Designer</title>
+  <style>
+    :root{
+      --bg:#0f1113;
+      --card:#111315;
+      --muted:#9aa0a6;
+      --accent:#ff6b57;
+      --glass: rgba(255,255,255,0.04);
+      --maxw:1100px;
+      --radius:12px;
+      --gap:22px;
+      color:#e6eef3;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#071017 0%, #0f1113 100%);
+      color:var(--muted);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
+    }
+    header{
+      max-width:var(--maxw);
+      margin:28px auto;
+      padding:0 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ff9b7e);display:flex;align-items:center;justify-content:center;font-weight:700;color:#061216;
+      box-shadow:0 6px 18px rgba(255,107,87,0.12);
+    }
+    nav a{color:var(--muted);text-decoration:none;margin-left:18px;font-weight:600}
+    .hero{
+      max-width:var(--maxw);
+      margin:18px auto;
+      padding:32px 20px;
+      display:grid;
+      grid-template-columns:1fr 420px;
+      gap:28px;
+      align-items:center;
+    }
+    .hero-left h1{font-size:38px;color:#fff;margin:0 0 12px}
+    .hero-left p{margin:0 0 20px;color:var(--muted)}
+    .cta{display:flex;gap:12px}
+    .btn{
+      padding:12px 18px;border-radius:10px;background:var(--accent);color:#081013;font-weight:700;text-decoration:none;
+    }
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      padding:18px;border-radius:var(--radius);box-shadow:0 6px 30px rgba(2,6,23,0.6);
+      color:var(--muted);
+    }
+    .portfolio{max-width:var(--maxw);margin:18px auto;padding:0 20px}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:var(--gap);
+    }
+    .project{
+      border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;
+      transition:transform .28s ease, box-shadow .28s ease;
+    }
+    .project:hover{transform:translateY(-8px);box-shadow:0 24px 48px rgba(2,6,23,0.6)}
+    .thumb{height:160px;background-size:cover;background-position:center}
+    .meta{padding:12px}
+    .meta h4{margin:0;color:#fff;font-size:16px}
+    .meta p{margin:8px 0 0;font-size:13px;color:var(--muted)}
+    footer{max-width:var(--maxw);margin:36px auto;padding:18px 20px;color:var(--muted);font-size:13px}
+    @media (max-width:880px){
+      .hero{grid-template-columns:1fr;gap:16px}
+      nav{display:none}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">AM</div>
+      <div>
+        <div style="font-weight:700;color:#fff">Alex Morgan</div>
+        <div style="font-size:12px;color:var(--muted)">Graphics Designer</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#services">Services</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-left">
+      <h1>Design that tells your story</h1>
+      <p>I craft brand identities, print materials, and digital visuals that connect with your audience. Focused on clarity, concept, and impact.</p>
+      <div class="cta">
+        <a class="btn" href="#portfolio">View Portfolio</a>
+        <a class="btn ghost" href="#contact">Get a Quote</a>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;color:#fff;margin-bottom:12px;font-weight:700">Featured Project</div>
+      <div style="height:220px;background:url('https://via.placeholder.com/420x220.png?text=Project+Hero') center/cover no-repeat;border-radius:10px;margin-bottom:12px"></div>
+      <div style="color:var(--muted);font-size:14px">Branding, packaging, and campaign for a local coffee startup. Increased brand recall with a clean, warm visual system.</div>
+    </div>
+  </section>
+
+  <section id="portfolio" class="portfolio">
+    <h2 style="color:#fff;margin:0 0 14px">Portfolio</h2>
+    <div class="grid">
+      <div class="project" onclick="openModal(1)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+1')"></div>
+        <div class="meta">
+          <h4>Branding - Ember Coffee</h4>
+          <p>Logo, identity, packaging</p>
+        </div>
+      </div>
+      <div class="project" onclick="openModal(2)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+2')"></div>
+        <div class="meta">
+          <h4>Editorial - City Magazine</h4>
+          <p>Layout, typography, illustration</p>
+        </div>
+      </div>
+      <div class="project" onclick="openModal(3)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+3')"></div>
+        <div class="meta">
+          <h4>Packaging - Sweetbox</h4>
+          <p>Concept, dielines, print-ready art</p>
+        </div>
+      </div>
+      <div class="project" onclick="openModal(4)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+4')"></div>
+        <div class="meta">
+          <h4>Web Assets - Livestream App</h4>
+          <p>Social, UI banners</p>
+        </div>
+      </div>
+      <div class="project" onclick="openModal(5)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+5')"></div>
+        <div class="meta">
+          <h4>Poster Series - Gallery</h4>
+          <p>Conceptual illustration</p>
+        </div>
+      </div>
+      <div class="project" onclick="openModal(6)">
+        <div class="thumb" style="background-image:url('https://via.placeholder.com/600x400.png?text=Project+6')"></div>
+        <div class="meta">
+          <h4>Identity - Woodfolk</h4>
+          <p>Logo, guidelines</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" style="max-width:var(--maxw);margin:28px auto;padding:0 20px">
+    <div style="display:flex;gap:22px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <div class="card">
+          <h3 style="margin-top:0;color:#fff">Start a project</h3>
+          <p style="color:var(--muted)">Tell me about your project and timeline. I usually reply within 48 hours.</p>
+          <form id="contactForm" onsubmit="submitForm(event)">
+            <div style="margin-bottom:10px">
+              <input name="name" placeholder="Your name" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6eef3"/>
+            </div>
+            <div style="margin-bottom:10px">
+              <input name="email" type="email" placeholder="Email" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6eef3"/>
+            </div>
+            <div style="margin-bottom:10px">
+              <textarea name="message" placeholder="Brief project details" rows="4" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6eef3"></textarea>
+            </div>
+            <button class="btn" type="submit">Send message</button>
+          </form>
+        </div>
+      </div>
+      <div style="width:320px">
+        <div class="card" style="padding:16px">
+          <div style="font-weight:700;color:#fff">Contact</div>
+          <div style="margin-top:8px;color:var(--muted);font-size:14px">Email: hello@alexmorgandesign.com</div>
+          <div style="margin-top:6px;color:var(--muted);font-size:14px">Location: Remote, available worldwide</div>
+          <div style="margin-top:12px">
+            <div style="font-weight:700;color:#fff;margin-bottom:8px">Rates</div>
+            <div style="color:var(--muted);font-size:14px">Hourly, project, and retainer options available. Please include a short brief for accurate estimate.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div style="max-width:var(--maxw);margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center">
+      <div>© <strong style="color:#fff">Alex Morgan</strong> - Graphics Designer</div>
+      <div style="color:var(--muted)">Follow: Instagram · Dribbble · Behance</div>
+    </div>
+  </footer>
+
+  <script>
+    function openModal(id){
+      alert('Open project modal for project ' + id + '. Replace this with a real lightbox or project page.');
+    }
+    function submitForm(e){
+      e.preventDefault();
+      alert('Thanks! This demo does not send messages. Integrate Formspree, Netlify Forms, or your own API to receive submissions.');
+      e.target.reset();
+    }
+  </script>
+</body>
+</html>
