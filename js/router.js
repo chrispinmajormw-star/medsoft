@@ -3,10 +3,10 @@
 // Works on GitHub Pages (no server rewrites needed) and keeps the back button working.
 import { setActiveNav } from './components/navbar.js';
 
-const SCREENS = ['home', 'find', 'detail', 'saved', 'profile', 'settings', 'admin', 'admin-edit', 'admin-stock', 'sysadmin'];
+const SCREENS = ['home', 'find', 'detail', 'saved', 'profile', 'settings', 'admin', 'admin-edit', 'admin-stock', 'sysadmin', 'location'];
 
 // Screens with forms: background refreshes must not re-render these and wipe what's being typed.
-export const FORM_SCREENS = new Set(['profile', 'settings', 'admin-edit', 'admin-stock']);
+export const FORM_SCREENS = new Set(['profile', 'settings', 'admin-edit', 'admin-stock', 'location']);
 
 const renderers = {};
 let internalNavigations = 0;

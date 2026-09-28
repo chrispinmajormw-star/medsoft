@@ -2,23 +2,21 @@
 import { store, myFacilityById, isFacilityAdmin } from '../store.js';
 import { ICON } from '../icons.js';
 import * as api from '../api.js';
-import { esc, FACILITY_TYPES, getDevicePosition, typeInfo, servicesOf, SUGGESTED_SERVICES } from '../utils.js';
+import { esc, FACILITY_TYPES, typeInfo, servicesOf, SUGGESTED_SERVICES } from '../utils.js';
+import { pickerHTML, mountPicker } from '../components/place-picker.js';
 import { emptyState } from '../components/cards.js';
 import { toast } from '../components/toast.js';
 import { go } from '../router.js';
 import { refreshAfterAdminChange } from '../data.js';
 
-let picker = null;       // Leaflet map for choosing the location
-let pickerMarker = null;
+let picker = null;       // shared place picker (components/place-picker.js)
 let editingId = null;    // null when adding
 
-function setCoords(lat, lng, pan = false) {
+function setCoords(lat, lng) {
   const latEl = document.getElementById('facLat');
   const lngEl = document.getElementById('facLng');
   if (latEl) latEl.value = lat.toFixed(6);
   if (lngEl) lngEl.value = lng.toFixed(6);
-  if (pickerMarker) pickerMarker.setLatLng([lat, lng]);
-  if (pan && picker) picker.setView([lat, lng], Math.max(picker.getZoom(), 16));
 }
 
 function pinIcon(type) {
@@ -30,21 +28,6 @@ function pinIcon(type) {
   });
 }
 
-function initPicker(lat, lng, type) {
-  if (picker) { picker.remove(); picker = null; pickerMarker = null; }
-  const el = document.getElementById('pickerMap');
-  if (!el) return;
-  if (typeof window.L === 'undefined') {
-    el.outerHTML = '<p class="picker-hint">The map could not load. Enter the coordinates below instead.</p>';
-    return;
-  }
-  picker = L.map(el, { zoomControl: true }).setView([lat, lng], 16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(picker);
-  pickerMarker = L.marker([lat, lng], { draggable: true, icon: pinIcon(type) }).addTo(picker);
-  pickerMarker.on('dragend', () => { const p = pickerMarker.getLatLng(); setCoords(p.lat, p.lng); });
-  picker.on('click', e => setCoords(e.latlng.lat, e.latlng.lng));
-  setTimeout(() => picker && picker.invalidateSize(), 80);
-}
 
 // Ticked services survive a change of facility type; custom ones stay listed.
 let serviceChoices = new Map(); // lowercased name -> { name, checked }
@@ -77,7 +60,7 @@ function form(f) {
           </label>
           <label class="field">Phone<input name="phone" type="tel" value="${esc(v.phone || '')}" placeholder="+265 …"></label>
           <label class="field">Street address<input name="address" value="${esc(v.address || '')}" placeholder="e.g. Kamuzu Rd, Area 9"></label>
-          <label class="field">City or town<input name="city" value="${esc(v.city || '')}" placeholder="Lilongwe"></label>
+          <label class="field">City or town<input name="city" value="${esc(v.city || '')}" placeholder="e.g. Zomba"></label>
         </div>
       </div>
 
@@ -107,9 +90,8 @@ function form(f) {
       <div class="card panel">
         <h3>Location</h3>
         <div class="form">
-          <p class="picker-hint">Tap the map or drag the pin to your entrance.</p>
-          <div id="pickerMap" class="picker-map"></div>
-          <button type="button" class="btn btn-outline btn-block" data-action="picker-locate">${ICON.target} Use my current location</button>
+          <p class="picker-hint">${f ? 'Drag the pin to your entrance if it needs adjusting.' : 'Place the pin on your entrance: search your area, tap the map, or use your current location if you are there now.'}</p>
+          ${pickerHTML('facilityPicker', { searchPlaceholder: 'Search your town, area or street' })}
           <div class="row-2">
             <label class="field">Latitude<input id="facLat" name="lat" inputmode="decimal" required></label>
             <label class="field">Longitude<input id="facLng" name="lng" inputmode="decimal" required></label>
@@ -171,10 +153,19 @@ export function renderAdminEdit(param) {
   document.getElementById('customService').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); adminEditActions['add-custom-service'](); }
   });
-  const lat = f ? f.lat : store.position.lat;
-  const lng = f ? f.lng : store.position.lng;
-  setCoords(lat, lng);
-  initPicker(lat, lng, f ? f.type : 'pharmacy');
+  // No default spot: a new facility has no pin until the admin places one.
+  if (f) setCoords(f.lat, f.lng);
+  if (picker) picker.destroy();
+  picker = mountPicker('facilityPicker', {
+    initial: f ? { lat: f.lat, lng: f.lng } : null,
+    icon: typeof window.L !== 'undefined' ? pinIcon(f ? f.type : 'pharmacy') : null,
+    onPick: (lat, lng, label) => {
+      setCoords(lat, lng);
+      // Fill "City or town" from the place name if it's still empty (e.g. "Area 18, Lilongwe" -> "Lilongwe").
+      const city = document.querySelector('#facilityForm [name="city"]');
+      if (label && city && !city.value.trim()) city.value = label.split(',').pop().trim();
+    },
+  });
 }
 
 // ---------- handlers ----------
@@ -191,8 +182,9 @@ function readForm(formEl) {
     is_24h: is24h,
     open_time: is24h ? null : d.open_time || null,
     close_time: is24h ? null : d.close_time || null,
-    lat: Number(d.lat),
-    lng: Number(d.lng),
+    // Empty must stay empty: Number('') is 0, which would put the facility in the ocean at 0,0.
+    lat: String(d.lat ?? '').trim() === '' ? null : Number(d.lat),
+    lng: String(d.lng ?? '').trim() === '' ? null : Number(d.lng),
   };
   if (formEl.elements.is_active) fields.is_active = formEl.elements.is_active.checked;
   return fields;
@@ -200,6 +192,7 @@ function readForm(formEl) {
 
 function validate(f) {
   if (!f.name) return 'Enter the facility name.';
+  if (f.lat === null || f.lng === null) return 'Place your facility on the map: search your area, tap the map, or use your current location.';
   if (!Number.isFinite(f.lat) || f.lat < -90 || f.lat > 90) return 'Latitude must be a number between -90 and 90.';
   if (!Number.isFinite(f.lng) || f.lng < -180 || f.lng > 180) return 'Longitude must be a number between -180 and 180.';
   if (!f.is_24h && (Boolean(f.open_time) !== Boolean(f.close_time))) return 'Enter both opening and closing times, or leave both empty.';
@@ -244,18 +237,6 @@ export const adminEditSubmits = {
 };
 
 export const adminEditActions = {
-  'picker-locate': async el => {
-    el.disabled = true;
-    try {
-      const p = await getDevicePosition();
-      setCoords(p.lat, p.lng, true);
-      toast('Pin moved to your current location.');
-    } catch (err) {
-      toast(err.message);
-    } finally {
-      el.disabled = false;
-    }
-  },
   'add-custom-service': () => {
     const input = document.getElementById('customService');
     const name = input.value.trim().replace(/\s+/g, ' ');
@@ -285,7 +266,7 @@ export const adminEditActions = {
 export const adminEditChanges = {
   'toggle-24h': el => document.getElementById('hoursRow')?.classList.toggle('hidden', el.checked),
   'facility-type': el => {
-    if (pickerMarker) pickerMarker.setIcon(pinIcon(el.value));
+    if (picker && typeof window.L !== 'undefined') picker.setIcon(pinIcon(el.value));
     renderServiceChecks(el.value);
   },
   'service-check': el => {

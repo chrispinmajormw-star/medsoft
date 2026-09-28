@@ -1,6 +1,7 @@
 // Leaflet map for the Find screen. Leaflet is loaded as a global <script> in index.html.
 import { store } from '../store.js';
-import { esc, km, isOpenNow, typeInfo } from '../utils.js';
+import { esc, awayText, isOpenNow, typeInfo } from '../utils.js';
+import { MAP_START } from '../location.js';
 
 let mapObj = null;
 let userMarker = null;
@@ -22,8 +23,8 @@ export function mapAvailable() { return typeof window.L !== 'undefined'; }
 
 export function initMap(onSelect) {
   if (mapObj || !mapAvailable()) return Boolean(mapObj);
-  const { lat, lng } = store.position;
-  mapObj = L.map('findMap', { zoomControl: false }).setView([lat, lng], 13);
+  const { lat, lng } = store.position || MAP_START;
+  mapObj = L.map('findMap', { zoomControl: false }).setView([lat, lng], store.position ? 13 : MAP_START.zoom);
   L.control.zoom({ position: 'bottomright' }).addTo(mapObj);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
@@ -39,9 +40,14 @@ export function initMap(onSelect) {
 
 export function syncMap(items) {
   if (!mapObj) return;
-  const { lat, lng } = store.position;
-  userMarker.setLatLng([lat, lng]);
-  radiusCircle.setLatLng([lat, lng]).setRadius(store.filters.radius * 1000);
+  if (store.position) {
+    const { lat, lng } = store.position;
+    userMarker.setLatLng([lat, lng]).addTo(mapObj);
+    radiusCircle.setLatLng([lat, lng]).setRadius(store.filters.radius * 1000).addTo(mapObj);
+  } else {
+    userMarker.remove();
+    radiusCircle.remove();
+  }
 
   const keep = new Set(items.map(f => f.id));
   markers.forEach((m, id) => { if (!keep.has(id)) { mapObj.removeLayer(m); markers.delete(id); } });
@@ -54,7 +60,7 @@ export function syncMap(items) {
     }
     m.setLatLng([f.lat, f.lng]); // admins can move their pin
     m.setIcon(pinIcon(f));
-    m.bindTooltip(`<b>${esc(f.name)}</b><br>${km(f.dist)}, ${isOpenNow(f) ? 'open now' : 'closed'}`, { direction: 'top', offset: [0, -30] });
+    m.bindTooltip(`<b>${esc(f.name)}</b><br>${[awayText(f.dist), isOpenNow(f) ? 'open now' : 'closed'].filter(Boolean).join(', ')}`, { direction: 'top', offset: [0, -30] });
   });
 }
 
@@ -62,6 +68,6 @@ export function refreshMapSize(recenter = false) {
   if (!mapObj) return;
   setTimeout(() => {
     mapObj.invalidateSize();
-    if (recenter) mapObj.setView([store.position.lat, store.position.lng], mapObj.getZoom());
+    if (recenter && store.position) mapObj.setView([store.position.lat, store.position.lng], Math.max(mapObj.getZoom(), 13));
   }, 60);
 }

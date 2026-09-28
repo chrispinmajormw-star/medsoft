@@ -13,8 +13,10 @@ export const store = {
   profile: null,
   isSystemAdmin: false, // from public.system_admins; only settable in the Supabase SQL editor
   theme: savedTheme(),
-  position: { lat: CONFIG.DEFAULT_LOCATION.lat, lng: CONFIG.DEFAULT_LOCATION.lng },
-  positionSource: 'default', // 'default' | 'device'
+  // The user's location, as they chose it (see location.js). null until they choose.
+  position: null,
+  positionSource: null, // 'device' (GPS) | 'chosen' (picked on map/search) | null
+  positionLabel: '',
   filters: { type: 'all', query: '', radius: savedRadius() || CONFIG.DEFAULT_RADIUS_KM, openOnly: false },
   mapMode: false,
 };

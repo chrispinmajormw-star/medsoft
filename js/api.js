@@ -11,7 +11,10 @@ const FACILITY_COLUMNS = [
   'rating', 'reviews_count', 'verified', 'is_active', 'notice', 'owner_id', 'updated_at', 'stock_updated_at',
   'facility_stock(id,item,status,kind,updated_at)',
 ].join(',');
-const PROFILE_COLUMNS = 'id,full_name,city,phone,default_radius_km,theme,role';
+const PROFILE_COLUMNS_BASIC = 'id,full_name,city,phone,default_radius_km,theme,role';
+const PROFILE_COLUMNS = `${PROFILE_COLUMNS_BASIC},location_mode,location_lat,location_lng,location_label`;
+// location_* arrive with 008_user_location.sql; keep working if it hasn't been run yet.
+const isMissingColumn = e => e && /location_|42703|PGRST204/.test(`${e.code} ${e.message}`);
 
 // Columns a facility admin is allowed to write (matches the grants in 002_accounts_and_admin.sql).
 const EDITABLE_FACILITY_FIELDS = [
@@ -249,7 +252,8 @@ export async function updatePassword(password) {
 export async function fetchProfile(userId) {
   const sb = await getClient();
   if (!sb || !userId) return null;
-  const { data, error } = await sb.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
+  let { data, error } = await sb.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
+  if (isMissingColumn(error)) ({ data, error } = await sb.from('profiles').select(PROFILE_COLUMNS_BASIC).eq('id', userId).maybeSingle());
   if (error) throw error;
   return data;
 }
@@ -257,7 +261,8 @@ export async function fetchProfile(userId) {
 // fields: any of full_name, city, phone, default_radius_km, theme, role
 export async function saveProfile(userId, fields) {
   const sb = await getClient();
-  const { data, error } = await sb.from('profiles').update(fields).eq('id', userId).select(PROFILE_COLUMNS).maybeSingle();
+  let { data, error } = await sb.from('profiles').update(fields).eq('id', userId).select(PROFILE_COLUMNS).maybeSingle();
+  if (isMissingColumn(error)) ({ data, error } = await sb.from('profiles').update(fields).eq('id', userId).select(PROFILE_COLUMNS_BASIC).maybeSingle());
   if (error) throw error;
   if (data) return data;
   // No profile row yet (account created before the sign-up trigger existed).

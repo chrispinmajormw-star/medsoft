@@ -56,8 +56,15 @@ export function haversineKm(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+// dist is null when the user hasn't set a location yet.
 export function withDistances(facilities, position) {
-  return facilities.map(f => ({ ...f, dist: haversineKm(position, f) }));
+  return facilities.map(f => ({ ...f, dist: position ? haversineKm(position, f) : null }));
+}
+
+// Nearest first when we know where the user is; otherwise alphabetical.
+export function byDistanceOrName(a, b) {
+  if (a.dist != null && b.dist != null) return a.dist - b.dist;
+  return a.name.localeCompare(b.name);
 }
 
 // Escape text before putting it into innerHTML — data comes from a database.
@@ -91,7 +98,9 @@ export function hoursLabel(f) {
   return `${trimTime(f.openTime)}–${trimTime(f.closeTime)}`;
 }
 
-export const km = d => `${d.toFixed(1)} km`;
+export const km = d => (d == null ? '' : `${d.toFixed(1)} km`);
+// "2.4 km away, " or "" when the distance is unknown.
+export const awayText = d => (d == null ? '' : `${km(d)} away`);
 
 export function timeAgo(iso) {
   if (!iso) return '';
@@ -116,8 +125,11 @@ export function getDevicePosition(timeout = 8000) {
   });
 }
 
+// Google Maps directions. Without a start point it routes from the phone's real
+// position, which is right when the user hasn't chosen one in the app.
 export function directionsUrl(from, to) {
-  return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${from.lat},${from.lng};${to.lat},${to.lng}`;
+  const origin = from ? `&origin=${from.lat},${from.lng}` : '';
+  return `https://www.google.com/maps/dir/?api=1${origin}&destination=${to.lat},${to.lng}`;
 }
 
 export const telUrl = phone => `tel:${phone.replace(/[^\d+]/g, '')}`;

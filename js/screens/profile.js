@@ -2,13 +2,13 @@ import { store, displayName, accountType, ACCOUNT_LABELS } from '../store.js';
 import { CONFIG } from '../config.js';
 import { ICON } from '../icons.js';
 import { esc } from '../utils.js';
+import { locationSummary } from '../location.js';
 
 let authTab = 'signin';
 export const setAuthTab = tab => { authTab = tab; };
 
 function locationRow() {
-  const label = store.positionSource === 'device' ? 'Your current location' : `${CONFIG.DEFAULT_LOCATION.label} (default)`;
-  return `<button class="menu-row" data-action="locate">${ICON.target}<span>Use my location</span><small>${esc(label)}</small></button>`;
+  return `<button class="menu-row" data-action="go" data-screen="location">${ICON.target}<span>Your location</span><small>${esc(locationSummary())}</small></button>`;
 }
 const settingsRow = () => `<button class="menu-row" data-action="go" data-screen="settings">${ICON.settings}<span>Settings</span></button>`;
 
@@ -18,7 +18,7 @@ function aboutBlock() {
 
 function demoView() {
   return `
-    <div class="card prof-card"><div class="avatar">M</div><h3>Guest</h3><p>${esc(CONFIG.DEFAULT_LOCATION.label)}</p></div>
+    <div class="card prof-card"><div class="avatar">M</div><h3>Guest</h3><p>${esc(locationSummary())}</p></div>
     <div class="card panel"><h3>Accounts are off</h3>
       <p class="panel-text">This copy is running on sample data. Add your Supabase URL and anon key to <b>js/config.js</b> to turn on accounts, facility listings and synced saved places.</p>
     </div>

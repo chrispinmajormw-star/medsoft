@@ -40,7 +40,7 @@ function detailsSection() {
       <form class="form" id="profileForm">
         <label class="field">Full name<input name="full_name" autocomplete="name" value="${esc(p.full_name || '')}"></label>
         <label class="field">Phone<input name="phone" type="tel" autocomplete="tel" value="${esc(p.phone || '')}" placeholder="+265 …"></label>
-        <label class="field">City<input name="city" autocomplete="address-level2" value="${esc(p.city || '')}" placeholder="${esc(CONFIG.DEFAULT_LOCATION.label)}"></label>
+        <label class="field">City<input name="city" autocomplete="address-level2" value="${esc(p.city || '')}" placeholder="e.g. Zomba"></label>
         <label class="field">Email<input value="${esc(store.user.email)}" disabled></label>
         <p class="form-error" id="profileError"></p>
         <button class="btn btn-block" type="submit">Save changes</button>

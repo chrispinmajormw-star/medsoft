@@ -7,6 +7,11 @@
 <meta name="description" content="Find open pharmacies, clinics and hospitals near you and see what they have in stock.">
 <title>Medsoft</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Medsoft">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +36,7 @@
       <button class="search-bar" data-action="go" data-screen="find">
         <span data-icon="find"></span><span>Search drugs, services, equipment…</span>
       </button>
+      <button class="loc-chip" id="locChip" data-action="go" data-screen="location" aria-label="Your location"></button>
       <p class="demo-note hidden" id="demoNote">Showing sample places. Connect Supabase in <b>js/config.js</b> to load real data.</p>
       <div class="actions">
         <button class="action" data-action="find-type" data-type="pharmacy"><div class="ic tone-primary"><span data-icon="pill"></span></div><span>Pharmacies</span></button>
@@ -72,8 +78,9 @@
       <button class="chip" data-type="hospital">Hospitals</button>
       <button class="chip" data-open="1">Open now</button>
     </div>
-    <div class="radius-strip">
-      <label for="radiusSlider">Within <b id="radiusLabel">5 km</b></label>
+    <p class="find-loc-note hidden" id="findLocNote"></p>
+    <div class="radius-strip" id="radiusStrip">
+      <label for="radiusSlider">Within <b id="radiusLabel">5 km</b> <span id="radiusFrom"></span></label>
       <input type="range" id="radiusSlider" min="1" max="25" value="5" step="1">
     </div>
     <div class="scroll find-scroll"><div class="list-wrap" id="findList"></div></div>
@@ -128,6 +135,16 @@
     <div class="topbar"><h2 class="screen-title">My facilities</h2></div>
     <div class="scroll"><div id="adminBody"></div></div>
     <nav class="navbar" data-nav aria-label="Main"></nav>
+  </section>
+
+  <!-- YOUR LOCATION -->
+  <section class="screen" id="scr-location" aria-label="Your location">
+    <div class="detail-head">
+      <button class="iconbtn" data-action="back" data-fallback="home" aria-label="Back"><span data-icon="back"></span></button>
+      <h2>Your location</h2>
+      <span class="head-spacer"></span>
+    </div>
+    <div class="scroll"><div id="locationBody"></div></div>
   </section>
 
   <!-- SYSTEM ADMIN -->

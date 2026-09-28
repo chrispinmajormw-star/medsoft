@@ -1,7 +1,8 @@
 // HTML builders for facility cards and empty states.
 import { ICON } from '../icons.js';
 import { store } from '../store.js';
-import { esc, isOpenNow, hoursLabel, typeLabel, typeInfo, km, directionsUrl, statusLabels, KINDS, itemsOf } from '../utils.js';
+import { esc, isOpenNow, hoursLabel, typeLabel, typeInfo, awayText, directionsUrl, statusLabels, KINDS, itemsOf } from '../utils.js';
+import { routeOrigin } from '../location.js';
 
 export const badge = f => `<div class="rc-ic ${f.type}"><b>${typeInfo(f.type).letter}</b></div>`;
 
@@ -21,7 +22,7 @@ export function miniCard(f) {
       ${badge(f)}
       <div class="mini-body">
         <h4>${esc(f.name)}</h4>
-        <p>${km(f.dist)} away, ${typeLabel(f.type).toLowerCase()}</p>
+        <p>${[awayText(f.dist), typeLabel(f.type)].filter(Boolean).join(', ')}</p>
       </div>
       <span class="pill open">Open</span>
     </div>`;
@@ -39,7 +40,7 @@ export function resultCard(f, query = '') {
         ${badge(f)}
         <div class="rc-title">
           <h4>${esc(f.name)} ${f.verified ? `<span class="verified" title="Verified">${ICON.check}</span>` : ''}</h4>
-          <p>${typeLabel(f.type)}, ${km(f.dist)} away</p>
+          <p>${[typeLabel(f.type), awayText(f.dist)].filter(Boolean).join(', ')}${f.city && f.dist == null ? `, ${esc(f.city)}` : ''}</p>
           ${f.reviews ? `<div class="rc-rating">${ICON.star}<b>${f.rating.toFixed(1)}</b> (${f.reviews})</div>` : ''}
         </div>
         ${pending || `<span class="pill ${open ? 'open' : 'closed'}">${open ? 'Open' : 'Closed'}</span>`}
@@ -48,7 +49,7 @@ export function resultCard(f, query = '') {
       ${stock ? `<div class="stock-rows">${stock}</div>` : ''}
       <div class="rc-foot">
         <small>${hoursLabel(f)}</small>
-        <a class="btn btn-sm" data-action="noop" href="${directionsUrl(store.position, f)}" target="_blank" rel="noopener">Directions</a>
+        <a class="btn btn-sm" data-action="noop" href="${directionsUrl(routeOrigin(), f)}" target="_blank" rel="noopener">Directions</a>
       </div>
     </div>`;
 }

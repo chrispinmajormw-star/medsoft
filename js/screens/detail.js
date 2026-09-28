@@ -1,6 +1,7 @@
 import { store, facilityById } from '../store.js';
 import { ICON } from '../icons.js';
-import { esc, isOpenNow, hoursLabel, typeLabel, km, directionsUrl, telUrl, timeAgo, statusLabels, KINDS, itemsOf } from '../utils.js';
+import { esc, isOpenNow, hoursLabel, typeLabel, km, awayText, directionsUrl, telUrl, timeAgo, statusLabels, KINDS, itemsOf } from '../utils.js';
+import { routeOrigin } from '../location.js';
 import { emptyState, loadingList, errorState, stockTag } from '../components/cards.js';
 
 let currentId = null;
@@ -49,12 +50,13 @@ export function renderDetail(param) {
     <div class="status-card ${f.type}">
       <span class="type">${typeLabel(f.type)}</span>
       <h2>${esc(f.name)} ${f.verified ? `<span style="color:#fff">${ICON.check}</span>` : ''}</h2>
-      <div class="sub">${km(f.dist)} away. ${open ? 'Open now' : 'Closed now'}, ${hoursLabel(f)}.</div>
+      <div class="sub">${f.dist != null ? `${awayText(f.dist)}. ` : ''}${open ? 'Open now' : 'Closed now'}, ${hoursLabel(f)}.</div>
     </div>
     ${f.notice ? `<div class="note notice">${ICON.info}<span>${esc(f.notice)}</span></div>` : ''}
     <div class="card info-list">
       <div class="info-row"><span>Address</span><span>${esc(f.address || 'Not listed')}</span></div>
-      <div class="info-row"><span>Distance</span><span>${km(f.dist)}</span></div>
+      ${f.city ? `<div class="info-row"><span>City or town</span><span>${esc(f.city)}</span></div>` : ''}
+      <div class="info-row"><span>Distance</span><span>${f.dist != null ? km(f.dist) : '<button class="link-btn" data-action="go" data-screen="location">Set your location</button>'}</span></div>
       <div class="info-row"><span>Hours</span><span>${hoursLabel(f)}</span></div>
       <div class="info-row"><span>Phone</span><span>${esc(f.phone || 'Not listed')}</span></div>
       ${f.reviews ? `<div class="info-row"><span>Rating</span><span>${f.rating.toFixed(1)} ★ (${f.reviews})</span></div>` : ''}
@@ -75,5 +77,5 @@ export function renderDetail(param) {
   const call = document.getElementById('callBtn');
   if (f.phone) { call.href = telUrl(f.phone); call.removeAttribute('aria-disabled'); }
   else { call.removeAttribute('href'); call.setAttribute('aria-disabled', 'true'); }
-  document.getElementById('dirBtn').href = directionsUrl(store.position, f);
+  document.getElementById('dirBtn').href = directionsUrl(routeOrigin(), f);
 }

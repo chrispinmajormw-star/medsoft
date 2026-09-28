@@ -1,6 +1,7 @@
 import { store } from '../store.js';
 import { ICON } from '../icons.js';
-import { isOpenNow, rememberRadius } from '../utils.js';
+import { isOpenNow, rememberRadius, byDistanceOrName, esc } from '../utils.js';
+import { hasLocation, locationSummary } from '../location.js';
 import { resultCard, emptyState, loadingList, errorState } from '../components/cards.js';
 import { initMap, syncMap, refreshMapSize, mapAvailable } from './map.js';
 import { toast } from '../components/toast.js';
@@ -10,12 +11,12 @@ export function filteredFacilities() {
   const { type, query, radius, openOnly } = store.filters;
   const q = query.trim().toLowerCase();
   return store.facilities.filter(f => {
-    if (f.dist > radius) return false;
+    if (f.dist != null && f.dist > radius) return false; // no location yet: no distance filter
     if (type !== 'all' && f.type !== type) return false;
     if (openOnly && !isOpenNow(f)) return false;
     if (q && !(f.name.toLowerCase().includes(q) || f.stock.some(s => s.status !== 'out' && s.item.toLowerCase().includes(q)))) return false;
     return true;
-  }).sort((a, b) => a.dist - b.dist);
+  }).sort(byDistanceOrName);
 }
 
 function syncControls() {
@@ -24,6 +25,11 @@ function syncControls() {
   document.querySelector('#typeChips [data-open]').classList.toggle('active', openOnly);
   document.getElementById('radiusSlider').value = radius;
   document.getElementById('radiusLabel').textContent = `${radius} km`;
+  document.getElementById('radiusFrom').textContent = hasLocation() ? `of ${locationSummary()}` : '';
+  document.getElementById('radiusStrip').classList.toggle('hidden', !hasLocation());
+  const note = document.getElementById('findLocNote');
+  note.classList.toggle('hidden', hasLocation());
+  note.innerHTML = hasLocation() ? '' : `Showing all places, A–Z. <button class="link-btn" data-action="go" data-screen="location">Set your location</button> to see the nearest.`;
   const input = document.getElementById('searchInput');
   if (document.activeElement !== input) input.value = query;
 }
@@ -37,7 +43,7 @@ export function renderFind() {
   const items = filteredFacilities();
   list.innerHTML = items.length
     ? items.map(f => resultCard(f, store.filters.query)).join('')
-    : emptyState('find', `Nothing matches within ${store.filters.radius} km.<br>Widen the radius or clear the filters.`,
+    : emptyState('find', hasLocation() ? `Nothing matches within ${store.filters.radius} km.<br>Widen the radius or clear the filters.` : 'Nothing matches.<br>Try clearing the filters.',
         '<button class="btn btn-sm" data-action="clear-filters">Clear filters</button>');
   syncMap(items);
 }
