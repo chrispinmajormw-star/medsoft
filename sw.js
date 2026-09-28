@@ -3,7 +3,7 @@
 // the saved copy is only used when there's no connection.
 // Your Supabase data and map tiles are never cached (always live).
 // Libraries from CDNs (map, Supabase login, fonts) keep a copy so the app shell works offline.
-const CACHE = 'medsoft-v2'; // change this name to force every device to drop old files
+const CACHE = 'medsoft-v3'; // change this name to force every device to drop old files
 const APP_FILES = [
   "./",
   "./index.html",
@@ -23,6 +23,7 @@ const APP_FILES = [
   "./js/config.js",
   "./js/data.js",
   "./js/icons.js",
+  "./js/location.js",
   "./js/router.js",
   "./js/seed-data.js",
   "./js/store.js",
@@ -30,6 +31,7 @@ const APP_FILES = [
   "./js/utils.js",
   "./js/components/cards.js",
   "./js/components/navbar.js",
+  "./js/components/place-picker.js",
   "./js/components/toast.js",
   "./js/screens/admin-edit.js",
   "./js/screens/admin-stock.js",
@@ -37,6 +39,7 @@ const APP_FILES = [
   "./js/screens/detail.js",
   "./js/screens/find.js",
   "./js/screens/home.js",
+  "./js/screens/location.js",
   "./js/screens/map.js",
   "./js/screens/profile.js",
   "./js/screens/saved.js",
